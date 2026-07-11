@@ -26,6 +26,11 @@ proc initSignatures(): seq[ServiceProbe] =
   nullProbe.matches.add(MatchRule(pattern: re2"^SSH-(\d\.\d)-OpenSSH_([\w.]+) ", templateStr: "OpenSSH v$2"))
   nullProbe.matches.add(MatchRule(pattern: re2"^SSH-(\d\.\d)-Dropbear_([\w.]+) ", templateStr: "Dropbear SSH v$2"))
   nullProbe.matches.add(MatchRule(pattern: re2"^SSH-1\.5-OpenSSH_2", templateStr: "Legacy OpenSSH 2.x (Vulnérable)"))
+  nullProbe.matches.add(MatchRule(pattern: re2"OpenSSH_([\d.p]+)", templateStr: "OpenSSH $1"))
+  nullProbe.matches.add(MatchRule(pattern: re2"libssh-([\d.]+)", templateStr: "libssh $1"))
+  nullProbe.matches.add(MatchRule(pattern: re2"Cisco SSH-([\d.]+)", templateStr: "Cisco SSH $1"))
+  nullProbe.matches.add(MatchRule(pattern: re2"Sun_SSH-([\d.]+)", templateStr: "SUNSSH $1"))
+
 
   # Signatures FTP (Ancien & Récent)
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*vsFTPd (\d\.\d\.\d)", templateStr: "vsFTPd v$1"))
@@ -33,14 +38,17 @@ proc initSignatures(): seq[ServiceProbe] =
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*Pure-FTPd", templateStr: "Pure-FTPd (Version Cachée)"))
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*WarFTPd", templateStr: "WarFTPd (Legacy Windows)"))
 
+
   # Signatures SMTP / Courriel
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*Postfix", templateStr: "Postfix SMTP"))
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*Exim (\d\.\d\.\d)", templateStr: "Exim SMTP v$1"))
   nullProbe.matches.add(MatchRule(pattern: re2"^220.*Sendmail", templateStr: "Sendmail (Legacy)"))
 
+
   # Telnet & Divers
   nullProbe.matches.add(MatchRule(pattern: re2"(?i)login:\s*$", templateStr: "Telnet Service"))
   nullProbe.matches.add(MatchRule(pattern: re2"^AMQP\x00\x00\x09\x01", templateStr: "RabbitMQ / AMQP Broker"))
+
 
   # 2. HTTP PROBE : si le port est muet, on envoie une requête générique
   var httpProbe = ServiceProbe(
@@ -49,22 +57,44 @@ proc initSignatures(): seq[ServiceProbe] =
     matches: @[]
   )
 
+
+  # Redis sonde
+  var redisProbe = ServiceProbe(
+    name: "RedisProbe",
+    payload:  "INFO\r\n",
+    matches:  @[]
+  )
+  redisProbe.matches.add(MatchRule(pattern:  re2"redis_version:([\d.]+)", templateStr: "Redis v$1"))
+
+  return @[nullProbe, httpProbe, redisProbe]
+
+
   # Serveurs Web Classiques & Modernes
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*nginx/([\w.]+)", templateStr: "Nginx v$1"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Apache/([\w.]+) ", templateStr: "Apache HTTPD v$1"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*cloudflare", templateStr: "Cloudflare Reverse Proxy"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Caddy", templateStr: "Caddy Server (Moderne Go)"))
+  httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*lighttpd/?([\d.]*)", templateStr: "Lighttpd $1"))
+  httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*gunicorn/?([\d.]*)"), templateStr: "Gunicorn $1")
+  httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*uvicorn", templateStr: "Uvicorn"))
+  httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*OpenResty/?([\d.]*)", templateStr: "OpenResty $1"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*traefik", templateStr: "Traefik Proxy (Cloud Native)"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Envoy", templateStr: "Envoy Proxy"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Microsoft-IIS/([\w.]+)", templateStr: "Microsoft IIS v$1"))
+
 
   # Stacks Applicatives & Frameworks
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)X-Powered-By:\s*Express", templateStr: "Node.js (Express Framework)"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Werkzeug/([\w.]+)", templateStr: "Python Werkzeug v$1 (Flask/API)"))
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)X-Powered-By:\s*PHP/([875]\.[\w.]+)", templateStr: "PHP Engine v$1"))
+  httpProbe.matches.add(MatchRule(pattern: re2"(?i)X-Powered-By:\s*PHP/([\d.]+)", templateStr: "PHP Engine v$1")
   httpProbe.matches.add(MatchRule(pattern: re2"(?i)Server:\s*Kestrel", templateStr: "Microsoft .NET Kestrel (Moderne)"))
 
+
+  # ASP.NET
+  httpProbe.matches.add(MatchRule(pattern:  re2"(?i)X-AspNet-Version:\s*([\d.]+)", templateStr: "X-AspNet-Version v$1"))
   return @[nullProbe, httpProbe]
+
 
 # Chargée une seule fois, au chargement du module (évite de reconstruire
 # la liste de regex à chaque appel d'identifyService)
