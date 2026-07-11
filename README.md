@@ -1,5 +1,7 @@
 # VoightNim
-[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-informational?style=for-the-badge)
+
 A lightweight, dependency-free TCP port scanner and service fingerprinter written in Nim, built from scratch as a learning project (no wrapping of `nmap`, `rustscan`, or any other external scanning tool).
 
 ```
