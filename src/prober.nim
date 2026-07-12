@@ -36,7 +36,7 @@ proc getMaxConcurrency*(requested: int): int =
 proc scanPortAsync*(targetIP: string, port: int, timeoutMs: int = DefaultTimeoutMs): Future[bool] {.async.} =
     ## Tente une connexion TCP non-bloquante sur (targetIP, port).
     ## Retourne true si le port est ouvert, false si fermé/filtré/timeout.
-    let socket = newAsyncSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, buffered = false)
+    let socket = newAsyncSocket(Domain.AF_INET, SockType.SOCK_STREAM, Protocol.IPPROTO_TCP, buffered = false)
     let connectFut = socket.connect(targetIP, Port(port))
 
     # withTimeout renvoie true si connectFut s'est terminé (succès OU échec)
@@ -124,7 +124,7 @@ proc grabBanner*(
     ## Ouvre une NOUVELLE connexion dédiée (celle du scan initial est fermée).
     ## Essaie chaque probe dans l'ordre jusqu'à obtenir une réponse non vide ;
     ## ne fait AUCUNE analyse de la bannière (c'est le rôle de fingerprint/engine).
-    let socket = newAsyncSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, buffered = false)
+    let socket = newAsyncSocket(Domain.AF_INET, SockType.SOCK_STREAM, Protocol.IPPROTO_TCP, buffered = false)
     let connectFut = socket.connect(targetIP, Port(port))
 
     if not await withTimeout(connectFut, timeoutMs):
