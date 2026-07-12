@@ -19,35 +19,43 @@ proc targetFor(
   else:
     fullBanner
 
+proc extractGroup(
+    target: string,
+    m: RegexMatch2,
+    groupIndex: int
+): string =
+  ## groupIndex est 0-indexé PARMI LES GROUPES CAPTURANTS (pas le match
+  ## entier) : re2"Server: nginx/([\d.]+)" n'a qu'un seul groupe, donc sa
+  ## version est à l'index 0. -1 signifie "pas de version à extraire".
+  if groupIndex < 0:
+    return ""
+
+  try:
+    let bounds = m.group(groupIndex)
+
+    # reNonCapture : le groupe existe dans le pattern mais n'a pas participé
+    # à ce match précis (ex: groupe optionnel absent)
+    if bounds != reNonCapture:
+      return target[bounds]
+
+  except IndexDefect, RangeDefect:
+    discard  # ce numéro de groupe n'existe pas du tout dans ce pattern
+
+  ""
+
 # -----------------------------------------------------------------------------
 # Axe "service" (technologie détectée : nginx, PHP, Redis...)
 # -----------------------------------------------------------------------------
 
-proc captureVersion(
-    target: string,
-    rule: MatchRule
-): string =
-
-  if rule.versionGroup <= 0:
-    return ""
-
-  var groups: seq[string]
-
-  if rule.pattern.match(target, groups):
-
-    if rule.versionGroup < groups.len:
-      return groups[rule.versionGroup]
-
-  ""
-
 proc buildFingerprint(
     fullBanner: string,
     target: string,
+    m: RegexMatch2,
     rule: MatchRule
 ): Fingerprint =
 
   result.info = getService(rule.service)
-  result.version = captureVersion(target, rule)
+  result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
   result.banner = fullBanner
 
@@ -62,13 +70,14 @@ proc fingerprint*(
   for rule in probe.matches:
 
     let target = targetFor(rule.headersOnly, headers, banner)
-    var groups: seq[string]
+    var m: RegexMatch2
 
-    if rule.pattern.match(target, groups):
+    if rule.pattern.match(target, m):
 
       return some(buildFingerprint(
         banner,
         target,
+        m,
         rule
       ))
 
@@ -85,14 +94,15 @@ proc fingerprintAll*(
   for rule in probe.matches:
 
     let target = targetFor(rule.headersOnly, headers, banner)
-    var groups: seq[string]
+    var m: RegexMatch2
 
-    if rule.pattern.match(target, groups):
+    if rule.pattern.match(target, m):
 
       result.add(
         buildFingerprint(
           banner,
           target,
+          m,
           rule
         )
       )
@@ -101,31 +111,15 @@ proc fingerprintAll*(
 # Axe "OS" (système d'exploitation détecté : Ubuntu, Windows...)
 # -----------------------------------------------------------------------------
 
-proc captureOsVersion(
-    target: string,
-    rule: OsMatchRule
-): string =
-
-  if rule.versionGroup <= 0:
-    return ""
-
-  var groups: seq[string]
-
-  if rule.pattern.match(target, groups):
-
-    if rule.versionGroup < groups.len:
-      return groups[rule.versionGroup]
-
-  ""
-
 proc buildOsFingerprint(
     fullBanner: string,
     target: string,
+    m: RegexMatch2,
     rule: OsMatchRule
 ): OsFingerprint =
 
   result.info = getOs(rule.os)
-  result.version = captureOsVersion(target, rule)
+  result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
   result.banner = fullBanner
 
@@ -140,13 +134,14 @@ proc fingerprintOs*(
   for rule in probe.osMatches:
 
     let target = targetFor(rule.headersOnly, headers, banner)
-    var groups: seq[string]
+    var m: RegexMatch2
 
-    if rule.pattern.match(target, groups):
+    if rule.pattern.match(target, m):
 
       return some(buildOsFingerprint(
         banner,
         target,
+        m,
         rule
       ))
 
@@ -163,14 +158,15 @@ proc fingerprintAllOs*(
   for rule in probe.osMatches:
 
     let target = targetFor(rule.headersOnly, headers, banner)
-    var groups: seq[string]
+    var m: RegexMatch2
 
-    if rule.pattern.match(target, groups):
+    if rule.pattern.match(target, m):
 
       result.add(
         buildOsFingerprint(
           banner,
           target,
+          m,
           rule
         )
       )
