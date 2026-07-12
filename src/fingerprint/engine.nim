@@ -1,7 +1,13 @@
+# src/fingerprint/engine.nim
+
 import std/options
 
 import types
 import matcher
+
+# -----------------------------------------------------------------------------
+# Axe "service"
+# -----------------------------------------------------------------------------
 
 proc detect*(
     banner: string,
@@ -48,5 +54,30 @@ proc detectBest*(
 
     if fp.get.confidence > best.get.confidence:
       best = fp
-      
+
   best
+
+# -----------------------------------------------------------------------------
+# Axe "OS"
+# -----------------------------------------------------------------------------
+
+proc detectOs*(
+    banner: string,
+    probe: ServiceProbe
+): Option[OsFingerprint] =
+
+  fingerprintOs(
+    banner,
+    probe
+  )
+
+
+proc detectAllOs*(
+    banner: string,
+    probe: ServiceProbe
+): seq[OsFingerprint] =
+
+  fingerprintAllOs(
+    banner,
+    probe
+  )
