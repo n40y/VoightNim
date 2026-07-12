@@ -1,7 +1,7 @@
 # src/probes/redis.nim
 
-import types
-import utils
+import ../fingerprint/types
+import ../fingerprint/utils
 import ../signatures/redis/init as redisSignatures
 
 proc getRedisProbe*(): ServiceProbe =
