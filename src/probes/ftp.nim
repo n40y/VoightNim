@@ -1,7 +1,7 @@
 # src/probes/ftp.nim
 
-import types
-import utils
+import ../fingerprint/types
+import ../fingerprint/utils
 import ../signatures/ftp/init as ftpSignatures
 
 proc getFtpProbe*(): ServiceProbe =
