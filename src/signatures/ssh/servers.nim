@@ -8,7 +8,7 @@
 ## on laisse la valeur par défaut (false).
 ## =============================================================================
 
-import re2
+import regex
 
 import ../../fingerprint/types
 
