@@ -4,7 +4,7 @@
 ##
 ####################################################
 
-import re2
+import regex
 
 type
   ProbeType* = enum
