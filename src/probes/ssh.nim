@@ -1,0 +1,19 @@
+# src/probes/ssh.nim
+
+import types
+import utils
+import ../signatures/ssh/init as sshSignatures
+import ../signatures/os/init as osSignatures
+
+proc getSshProbe*(): ServiceProbe =
+  result = ServiceProbe(
+    probeType: ptSSH,
+    name: "SSH",
+    payload: toBytes(""),
+    ports: @[22'u16],
+    timeoutMs: 1000,
+    rarity: 1,
+    ssl: false,
+    matches: sshSignatures.getSshSignatures(),
+    osMatches: osSignatures.getOsSignatures()
+  )
