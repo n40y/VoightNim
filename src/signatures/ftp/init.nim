@@ -4,7 +4,7 @@
 ## Point d'entrée unique pour les signatures FTP.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 import ./servers
 
 proc getFtpSignatures*(): seq[MatchRule] =
