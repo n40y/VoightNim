@@ -4,9 +4,9 @@
 ## Signature pour Redis, détectée via la réponse à la commande INFO.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getRedisServerSignatures*(): seq[MatchRule] =
 
