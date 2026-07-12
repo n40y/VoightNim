@@ -10,7 +10,7 @@
 
 import re2
 
-import ../../types
+import ../../fingerprint/types
 
 proc getSshServerSignatures*(): seq[MatchRule] =
 
