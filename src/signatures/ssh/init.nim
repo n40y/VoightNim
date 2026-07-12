@@ -4,7 +4,7 @@
 ## Point d'entrée unique pour les signatures SSH.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 import ./servers
 
 proc getSshSignatures*(): seq[MatchRule] =
