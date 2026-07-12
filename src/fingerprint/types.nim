@@ -1,3 +1,9 @@
+####################################################
+##
+## src/fingerprint/types.nim
+##
+####################################################
+
 import re2
 
 type
@@ -35,6 +41,16 @@ type
     sidOpenResty,
     sidIIS,
 
+    ## Reverse Proxy / CDN
+    sidCloudflare,
+    sidTraefik,
+    sidEnvoy,
+
+    ## Application servers (WSGI/ASGI/.NET)
+    sidGunicorn,
+    sidUvicorn,
+    sidKestrel,
+
     ## Runtime
     sidPHP,
     sidASPNet,
@@ -49,16 +65,22 @@ type
     ## SSH
     sidOpenSSH,
     sidLibSSH,
+    sidDropbear,
+    sidCiscoSSH,
+    sidSunSSH,
 
     ## FTP
     sidVsftpd,
     sidProFTPd,
     sidFileZilla,
+    sidPureFTPd,
+    sidMicrosoftFTP,
 
     ## Mail
     sidPostfix,
     sidExim,
     sidExchange,
+    sidSendmail,
 
     ## Databases
     sidRedis,
@@ -109,8 +131,69 @@ type
 
     confidence*: uint8
 
+    headersOnly*: bool  ## si true, la regex ne doit être testée que sur les
+                         ## en-têtes HTTP (pas sur le corps de la réponse)
+
   Fingerprint* = object
     info*: ServiceInfo
+
+    version*: string
+
+    confidence*: uint8
+
+    banner*: string
+
+  OsFamily* = enum
+    ofUnknown,
+    ofLinux,
+    ofWindows,
+    ofBSD,
+    ofMacOS
+
+  OsId* = enum
+    osUnknown,
+
+    ## Linux
+    osLinuxGeneric,
+    osUbuntu,
+    osDebian,
+    osCentOS,
+    osRHEL,
+    osFedora,
+
+    ## Windows
+    osWindows,
+    osWindowsServer,
+
+    ## BSD
+    osFreeBSD,
+    osOpenBSD,
+
+    ## macOS
+    osMacOS
+
+  OsInfo* = object
+    id*: OsId
+
+    name*: string
+
+    family*: OsFamily
+
+    cpe*: string
+
+  OsMatchRule* = object
+    pattern*: Regex2
+
+    os*: OsId
+
+    versionGroup*: int
+
+    confidence*: uint8
+
+    headersOnly*: bool
+
+  OsFingerprint* = object
+    info*: OsInfo
 
     version*: string
 
@@ -134,3 +217,5 @@ type
     rarity*: uint8
 
     matches*: seq[MatchRule]
+
+    osMatches*: seq[OsMatchRule]
