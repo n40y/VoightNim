@@ -1,7 +1,7 @@
 # src/probes/ssh.nim
 
-import types
-import utils
+import ../fingerprint/types
+import ../fingerprint/utils
 import ../signatures/ssh/init as sshSignatures
 import ../signatures/os/init as osSignatures
 
