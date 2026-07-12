@@ -7,9 +7,9 @@
 ## restent headersOnly: false par prudence.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getFrameworkSignatures*(): seq[MatchRule] =
 
