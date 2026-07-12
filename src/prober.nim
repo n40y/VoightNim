@@ -44,8 +44,18 @@ proc scanPortAsync*(targetIP: string, port: int, timeoutMs: int = DefaultTimeout
     let completed = await withTimeout(connectFut, timeoutMs)
 
     if not completed:
-        # Timeout : on referme le socket pour couper court à la tentative
-        socket.close()
+        # Timeout : le connect() est encore EN VOL côté OS. Fermer le socket
+        # maintenant est dangereux : le descripteur libéré peut être réattribué
+        # à un socket créé juste après (port suivant), et quand ce vieux
+        # Future finit par se terminer en arrière-plan, il agit sur le
+        # mauvais descripteur -> "Bad file descriptor" (piège classique
+        # d'asyncdispatch sous forte concurrence contre une vraie cible
+        # réseau, où les timeouts sont bien plus fréquents qu'en local).
+        # On reporte donc la fermeture à l'intérieur du callback du futur,
+        # pour qu'elle n'ait lieu qu'une fois l'opération réellement finie.
+        connectFut.addCallback(proc() =
+            socket.close()
+        )
         return false
 
     socket.close()
