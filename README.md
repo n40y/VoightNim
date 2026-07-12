@@ -97,7 +97,6 @@ Machine-readable output:
 |-----------------|-----------------------------------------------------------------------------|
 | `cli.nim`       | CLI argument parsing (`docopt`) and banner display                         |
 | `prober.nim`    | Async TCP connect scanning, port-range parsing, ulimit-based concurrency    |
-| `signatures.nim`| Service probes (null probe + HTTP probe) and banner-matching signatures    |
 | `topports.nim`  | Default list of commonly scanned ports                                     |
 | `VoightNim.nim` | Entry point — wires everything together, formats text/JSON output          |
 
