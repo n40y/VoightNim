@@ -9,7 +9,7 @@
 ## l'importer ci-dessous, et ajouter son proc à la concaténation.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 
 # À mesure qu'on ajoute des fichiers:
 import ./webservers
