@@ -1,7 +1,7 @@
 # src/fingerprint/matcher.nim
 
 import std/options
-import re2
+import regex
 
 import types
 import services
