@@ -6,6 +6,9 @@
 
 import std/[asyncdispatch, asyncnet, nativesockets, strutils]
 
+import fingerprint/types
+import fingerprint/utils
+
 when not defined(windows):
     import std/posix
 
@@ -108,3 +111,47 @@ proc scanRange*(targetIP: string, ports: seq[int], speed: int,
             result.add (p, results[idx])
 
         i = chunkEnd
+
+# --- Récupération de bannière sur un port confirmé ouvert -------------------
+
+proc grabBanner*(
+    targetIP: string,
+    port: int,
+    probes: seq[ServiceProbe],
+    timeoutMs: int = DefaultTimeoutMs
+): Future[string] {.async.} =
+    ## À appeler uniquement sur un port déjà confirmé ouvert par scanRange.
+    ## Ouvre une NOUVELLE connexion dédiée (celle du scan initial est fermée).
+    ## Essaie chaque probe dans l'ordre jusqu'à obtenir une réponse non vide ;
+    ## ne fait AUCUNE analyse de la bannière (c'est le rôle de fingerprint/engine).
+    let socket = newAsyncSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, buffered = false)
+    let connectFut = socket.connect(targetIP, Port(port))
+
+    if not await withTimeout(connectFut, timeoutMs):
+        socket.close()
+        return ""
+
+    if connectFut.failed:
+        discard connectFut.error
+        socket.close()
+        return ""
+
+    result = ""
+
+    for probe in probes:
+        try:
+            if probe.payload.len > 0:
+                await socket.send(toString(probe.payload))
+
+            let recvFut = socket.recv(4096)
+            if not await withTimeout(recvFut, probe.timeoutMs):
+                continue  # rien reçu à temps sur cette sonde, on tente la suivante
+
+            let banner = recvFut.read()
+            if banner.len > 0:
+                result = banner
+                break
+        except OSError:
+            break  # socket cassé côté distant, inutile d'insister
+
+    socket.close()
