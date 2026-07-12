@@ -4,9 +4,9 @@
 ## Signatures pour les outils de monitoring/observabilité exposés en HTTP.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getMonitoringSignatures*(): seq[MatchRule] =
 
