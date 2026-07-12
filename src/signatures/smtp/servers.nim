@@ -4,9 +4,9 @@
 ## Signatures pour les serveurs de messagerie (bannière SMTP / réponse EHLO).
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getSmtpServerSignatures*(): seq[MatchRule] =
 
