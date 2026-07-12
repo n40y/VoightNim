@@ -1,10 +1,11 @@
+# src/fingerprint/registry.nim
 import types
 
-import http
-import ssh
-import redis
-import ftp
-import smtp
+import ../probes/http
+import ../probes/ssh
+import ../probes/redis
+import ../probes/ftp
+import ../probes/smtp
 
 proc getAllProbes*(): seq[ServiceProbe] =
     @[
