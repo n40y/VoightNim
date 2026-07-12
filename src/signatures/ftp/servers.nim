@@ -5,9 +5,9 @@
 ## bannière envoyée après connexion (code 220) ou après USER anonymous.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getFtpServerSignatures*(): seq[MatchRule] =
 
