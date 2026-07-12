@@ -6,9 +6,9 @@
 ## Microsoft, jamais porté sur un autre OS).
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getWindowsOsSignatures*(): seq[OsMatchRule] =
 
