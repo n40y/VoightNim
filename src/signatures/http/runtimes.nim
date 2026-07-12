@@ -6,9 +6,9 @@
 ## information ne provient jamais du corps de la réponse.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getRuntimeSignatures*(): seq[MatchRule] =
 
