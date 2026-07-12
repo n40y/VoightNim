@@ -5,7 +5,7 @@
 ## signatures/http/init.nim : un fichier par famille d'OS, agrégés ici.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 import ./linux
 import ./windows
 
