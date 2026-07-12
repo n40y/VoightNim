@@ -4,7 +4,7 @@
 ## Point d'entrée unique pour les signatures Redis.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 import ./servers
 
 proc getRedisSignatures*(): seq[MatchRule] =
