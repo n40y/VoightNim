@@ -1,5 +1,5 @@
 ## =============================================================================
-## services.nim
+## src/fingerprint/services.nim
 ##
 ## Base de connaissances des technologies reconnues.
 ##
@@ -92,6 +92,80 @@ proc getService*(id: ServiceId): ServiceInfo =
       homepage: "https://learn.microsoft.com/iis/",
       cpe: "cpe:/a:microsoft:internet_information_services",
       defaultPorts: @[80'u16,443'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # Reverse Proxy / CDN
+  # ---------------------------------------------------------------------------
+
+  of sidCloudflare:
+    ServiceInfo(
+      id: sidCloudflare,
+      product: "Cloudflare",
+      vendor: "Cloudflare",
+      family: "Reverse Proxy",
+      homepage: "https://cloudflare.com",
+      cpe: "",
+      defaultPorts: @[80'u16, 443'u16]
+    )
+
+  of sidTraefik:
+    ServiceInfo(
+      id: sidTraefik,
+      product: "Traefik",
+      vendor: "Traefik Labs",
+      family: "Reverse Proxy",
+      homepage: "https://traefik.io",
+      cpe: "cpe:/a:traefik:traefik",
+      defaultPorts: @[80'u16, 443'u16, 8080'u16]
+    )
+
+  of sidEnvoy:
+    ServiceInfo(
+      id: sidEnvoy,
+      product: "Envoy",
+      vendor: "Envoy Proxy",
+      family: "Reverse Proxy",
+      homepage: "https://envoyproxy.io",
+      cpe: "cpe:/a:envoyproxy:envoy",
+      defaultPorts: @[80'u16, 443'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # Application servers (WSGI/ASGI/.NET)
+  # ---------------------------------------------------------------------------
+
+  of sidGunicorn:
+    ServiceInfo(
+      id: sidGunicorn,
+      product: "Gunicorn",
+      vendor: "Gunicorn",
+      family: "Application Server",
+      homepage: "https://gunicorn.org",
+      cpe: "cpe:/a:gunicorn:gunicorn",
+      defaultPorts: @[8000'u16]
+    )
+
+  of sidUvicorn:
+    ServiceInfo(
+      id: sidUvicorn,
+      product: "Uvicorn",
+      vendor: "Uvicorn",
+      family: "Application Server",
+      homepage: "https://www.uvicorn.org",
+      cpe: "",
+      defaultPorts: @[8000'u16]
+    )
+
+  of sidKestrel:
+    ServiceInfo(
+      id: sidKestrel,
+      product: "Kestrel",
+      vendor: "Microsoft",
+      family: "Application Server",
+      homepage: "https://learn.microsoft.com/aspnet/core/fundamentals/servers/kestrel",
+      cpe: "cpe:/a:microsoft:asp.net_core",
+      defaultPorts: @[5000'u16, 5001'u16]
     )
 
   # ---------------------------------------------------------------------------
@@ -203,6 +277,183 @@ proc getService*(id: ServiceId): ServiceInfo =
       homepage: "https://libssh.org",
       cpe: "cpe:/a:libssh:libssh",
       defaultPorts: @[22'u16]
+    )
+
+  of sidDropbear:
+    ServiceInfo(
+      id: sidDropbear,
+      product: "Dropbear SSH",
+      vendor: "Dropbear",
+      family: "Remote Access",
+      homepage: "https://matt.ucc.asn.au/dropbear/dropbear.html",
+      cpe: "cpe:/a:matt_johnston:dropbear_ssh_server",
+      defaultPorts: @[22'u16]
+    )
+
+  of sidCiscoSSH:
+    ServiceInfo(
+      id: sidCiscoSSH,
+      product: "Cisco SSH",
+      vendor: "Cisco",
+      family: "Remote Access",
+      homepage: "https://cisco.com",
+      cpe: "",
+      defaultPorts: @[22'u16]
+    )
+
+  of sidSunSSH:
+    ServiceInfo(
+      id: sidSunSSH,
+      product: "SunSSH",
+      vendor: "Oracle/Sun",
+      family: "Remote Access",
+      homepage: "",
+      cpe: "",
+      defaultPorts: @[22'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # FTP
+  # ---------------------------------------------------------------------------
+
+  of sidVsftpd:
+    ServiceInfo(
+      id: sidVsftpd,
+      product: "vsftpd",
+      vendor: "vsftpd",
+      family: "FTP",
+      homepage: "https://security.appspot.com/vsftpd.html",
+      cpe: "cpe:/a:vsftpd_project:vsftpd",
+      defaultPorts: @[21'u16]
+    )
+
+  of sidProFTPd:
+    ServiceInfo(
+      id: sidProFTPd,
+      product: "ProFTPD",
+      vendor: "ProFTPD Project",
+      family: "FTP",
+      homepage: "https://proftpd.org",
+      cpe: "cpe:/a:proftpd:proftpd",
+      defaultPorts: @[21'u16]
+    )
+
+  of sidFileZilla:
+    ServiceInfo(
+      id: sidFileZilla,
+      product: "FileZilla Server",
+      vendor: "FileZilla",
+      family: "FTP",
+      homepage: "https://filezilla-project.org",
+      cpe: "cpe:/a:filezilla:filezilla_server",
+      defaultPorts: @[21'u16]
+    )
+
+  of sidPureFTPd:
+    ServiceInfo(
+      id: sidPureFTPd,
+      product: "Pure-FTPd",
+      vendor: "Pure-FTPd",
+      family: "FTP",
+      homepage: "https://pureftpd.org",
+      cpe: "cpe:/a:pureftpd:pure-ftpd",
+      defaultPorts: @[21'u16]
+    )
+
+  of sidMicrosoftFTP:
+    ServiceInfo(
+      id: sidMicrosoftFTP,
+      product: "Microsoft FTP Service",
+      vendor: "Microsoft",
+      family: "FTP",
+      homepage: "",
+      cpe: "cpe:/a:microsoft:ftp_service",
+      defaultPorts: @[21'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # Mail
+  # ---------------------------------------------------------------------------
+
+  of sidPostfix:
+    ServiceInfo(
+      id: sidPostfix,
+      product: "Postfix",
+      vendor: "Postfix",
+      family: "Mail",
+      homepage: "https://postfix.org",
+      cpe: "cpe:/a:postfix:postfix",
+      defaultPorts: @[25'u16, 587'u16]
+    )
+
+  of sidExim:
+    ServiceInfo(
+      id: sidExim,
+      product: "Exim",
+      vendor: "Exim",
+      family: "Mail",
+      homepage: "https://exim.org",
+      cpe: "cpe:/a:exim:exim",
+      defaultPorts: @[25'u16]
+    )
+
+  of sidExchange:
+    ServiceInfo(
+      id: sidExchange,
+      product: "Microsoft Exchange",
+      vendor: "Microsoft",
+      family: "Mail",
+      homepage: "https://microsoft.com/exchange",
+      cpe: "cpe:/a:microsoft:exchange_server",
+      defaultPorts: @[25'u16, 587'u16]
+    )
+
+  of sidSendmail:
+    ServiceInfo(
+      id: sidSendmail,
+      product: "Sendmail",
+      vendor: "Proofpoint",
+      family: "Mail",
+      homepage: "https://proofpoint.com/us/products/email-protection/open-source-email-solution",
+      cpe: "cpe:/a:sendmail:sendmail",
+      defaultPorts: @[25'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # Monitoring
+  # ---------------------------------------------------------------------------
+
+  of sidGrafana:
+    ServiceInfo(
+      id: sidGrafana,
+      product: "Grafana",
+      vendor: "Grafana Labs",
+      family: "Monitoring",
+      homepage: "https://grafana.com",
+      cpe: "cpe:/a:grafana:grafana",
+      defaultPorts: @[3000'u16]
+    )
+
+  of sidPrometheus:
+    ServiceInfo(
+      id: sidPrometheus,
+      product: "Prometheus",
+      vendor: "Prometheus",
+      family: "Monitoring",
+      homepage: "https://prometheus.io",
+      cpe: "cpe:/a:prometheus:prometheus",
+      defaultPorts: @[9090'u16]
+    )
+
+  of sidElastic:
+    ServiceInfo(
+      id: sidElastic,
+      product: "Elasticsearch/Kibana",
+      vendor: "Elastic",
+      family: "Monitoring",
+      homepage: "https://elastic.co",
+      cpe: "cpe:/a:elastic:elasticsearch",
+      defaultPorts: @[9200'u16, 5601'u16]
     )
 
   # ---------------------------------------------------------------------------
