@@ -27,7 +27,7 @@ A lightweight, dependency-free TCP port scanner and service fingerprinter writte
 
 - [Nim](https://nim-lang.org/) 2.x
 - [Nimble](https://github.com/nim-lang/nimble) (ships with Nim)
-- Nimble packages: `docopt`, `regex`
+- Nimble packages: `docopt`, `re2`
 
 ## Installation
 
