@@ -1,7 +1,7 @@
 # src/probes/http.nim
 
-import types
-import utils
+import ../fingerprint/types
+import ../fingerprint/utils
 import ../signatures/http/init as httpSignatures
 import ../signatures/os/init as osSignatures
 
