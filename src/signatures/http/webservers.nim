@@ -8,9 +8,9 @@
 ## proviennent exclusivement des en-têtes, jamais du corps de la réponse.
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getWebServerSignatures*(): seq[MatchRule] =
 
