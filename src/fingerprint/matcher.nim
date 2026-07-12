@@ -72,7 +72,7 @@ proc fingerprint*(
     let target = targetFor(rule.headersOnly, headers, banner)
     var m: RegexMatch2
 
-    if rule.pattern.match(target, m):
+    if target.match(rule.pattern, m):
 
       return some(buildFingerprint(
         banner,
@@ -96,7 +96,7 @@ proc fingerprintAll*(
     let target = targetFor(rule.headersOnly, headers, banner)
     var m: RegexMatch2
 
-    if rule.pattern.match(target, m):
+    if target.match(rule.pattern, m):
 
       result.add(
         buildFingerprint(
@@ -136,7 +136,7 @@ proc fingerprintOs*(
     let target = targetFor(rule.headersOnly, headers, banner)
     var m: RegexMatch2
 
-    if rule.pattern.match(target, m):
+    if target.match(rule.pattern, m):
 
       return some(buildOsFingerprint(
         banner,
@@ -160,7 +160,7 @@ proc fingerprintAllOs*(
     let target = targetFor(rule.headersOnly, headers, banner)
     var m: RegexMatch2
 
-    if rule.pattern.match(target, m):
+    if target.match(rule.pattern, m):
 
       result.add(
         buildOsFingerprint(
