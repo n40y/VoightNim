@@ -17,7 +17,7 @@ proc getWindowsOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:\s*Microsoft-IIS",
     os: osWindows,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 90,
     headersOnly: true
   )
@@ -25,7 +25,7 @@ proc getWindowsOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(Win(32|64)\)",
     os: osWindows,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 90,
     headersOnly: true
   )
@@ -33,7 +33,7 @@ proc getWindowsOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)X-Powered-By:\s*ASP\.NET",
     os: osWindows,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 70,
     headersOnly: true
   )

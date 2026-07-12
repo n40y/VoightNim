@@ -23,7 +23,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*nginx/?([\d.]*)",
     service: sidNginx,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -31,7 +31,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*Apache/?([\d.]*)",
     service: sidApache,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -39,7 +39,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*Caddy",
     service: sidCaddy,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 100,
     headersOnly: true
   )
@@ -47,7 +47,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*lighttpd/?([\d.]*)",
     service: sidLighttpd,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -55,7 +55,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*OpenResty/?([\d.]*)",
     service: sidOpenResty,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -63,7 +63,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*Microsoft-IIS/?([\d.]*)",
     service: sidIIS,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -75,7 +75,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*cloudflare",
     service: sidCloudflare,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 100,
     headersOnly: true
   )
@@ -83,7 +83,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*traefik",
     service: sidTraefik,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )
@@ -91,7 +91,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*envoy",
     service: sidEnvoy,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )
@@ -103,7 +103,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*gunicorn/?([\d.]*)",
     service: sidGunicorn,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 95,
     headersOnly: true
   )
@@ -111,7 +111,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*uvicorn",
     service: sidUvicorn,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )
@@ -119,7 +119,7 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*Kestrel",
     service: sidKestrel,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )

@@ -17,7 +17,7 @@ proc getRuntimeSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)X-Powered-By:\s*PHP/?([\d.]*)",
     service: sidPHP,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 95,
     headersOnly: true
   )
@@ -25,7 +25,7 @@ proc getRuntimeSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)X-Powered-By:\s*ASP\.NET",
     service: sidASPNet,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )
@@ -33,7 +33,7 @@ proc getRuntimeSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)X-AspNet-Version:\s*([\d.]+)",
     service: sidASPNet,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 95,
     headersOnly: true
   )

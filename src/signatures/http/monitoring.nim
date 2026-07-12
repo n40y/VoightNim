@@ -15,7 +15,7 @@ proc getMonitoringSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)X-Grafana-Version:\s*([\d.]+)",
     service: sidGrafana,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100,
     headersOnly: true
   )
@@ -23,7 +23,7 @@ proc getMonitoringSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)kbn-name",
     service: sidElastic,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 90,
     headersOnly: true
   )
@@ -31,7 +31,7 @@ proc getMonitoringSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Prometheus",
     service: sidPrometheus,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: false
   )

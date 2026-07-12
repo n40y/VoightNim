@@ -18,7 +18,7 @@ proc getFrameworkSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)X-Powered-By:\s*Express",
     service: sidExpress,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 95,
     headersOnly: true
   )
@@ -26,7 +26,7 @@ proc getFrameworkSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*Werkzeug/?([\d.]*)",
     service: sidFlask,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 90,
     headersOnly: true
   )
@@ -34,7 +34,7 @@ proc getFrameworkSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)laravel_session",
     service: sidLaravel,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 90,
     headersOnly: false
   )
@@ -42,7 +42,7 @@ proc getFrameworkSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"(?i)csrftoken",
     service: sidDjango,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 90,
     headersOnly: false
   )

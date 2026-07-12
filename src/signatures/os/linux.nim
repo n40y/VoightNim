@@ -21,7 +21,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(Ubuntu\)",
     os: osUbuntu,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: true
   )
@@ -29,7 +29,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(Debian\)",
     os: osDebian,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: true
   )
@@ -37,7 +37,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(CentOS\)",
     os: osCentOS,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: true
   )
@@ -45,7 +45,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(Red Hat\)",
     os: osRHEL,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: true
   )
@@ -53,7 +53,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"(?i)Server:.*\(Fedora\)",
     os: osFedora,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 85,
     headersOnly: true
   )
@@ -65,7 +65,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"OpenSSH_[\d.]+p?\d*\s+Ubuntu",
     os: osUbuntu,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 80,
     headersOnly: false
   )
@@ -73,7 +73,7 @@ proc getLinuxOsSignatures*(): seq[OsMatchRule] =
   result.add OsMatchRule(
     pattern: re2"OpenSSH_[\d.]+p?\d*\s+Debian",
     os: osDebian,
-    versionGroup: 0,
+    versionGroup: -1,
     confidence: 80,
     headersOnly: false
   )

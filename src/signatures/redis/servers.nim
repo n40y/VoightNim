@@ -15,6 +15,6 @@ proc getRedisServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"redis_version:([\d.]+)",
     service: sidRedis,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )

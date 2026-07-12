@@ -19,34 +19,34 @@ proc getSshServerSignatures*(): seq[MatchRule] =
   result.add MatchRule(
     pattern: re2"OpenSSH[_-]([\d.p]+)",
     service: sidOpenSSH,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )
 
   result.add MatchRule(
     pattern: re2"libssh-([\d.]+)",
     service: sidLibSSH,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )
 
   result.add MatchRule(
     pattern: re2"Dropbear_([\d.]+)",
     service: sidDropbear,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )
 
   result.add MatchRule(
     pattern: re2"Cisco SSH-([\d.]+)",
     service: sidCiscoSSH,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )
 
   result.add MatchRule(
     pattern: re2"Sun_SSH-([\d.]+)",
     service: sidSunSSH,
-    versionGroup: 1,
+    versionGroup: 0,
     confidence: 100
   )
