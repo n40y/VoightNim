@@ -1,7 +1,7 @@
 # src/probes/smtp.nim
 
-import types
-import utils
+import ../fingerprint/types
+import ../fingerprint/utils
 import ../signatures/smtp/init as smtpSignatures
 
 proc getSmtpProbe*(): ServiceProbe =
