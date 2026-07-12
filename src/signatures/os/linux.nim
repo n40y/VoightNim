@@ -6,9 +6,9 @@
 ## (ex: Apache "(Ubuntu)", suffixe de paquet OpenSSH "Ubuntu-...").
 ## =============================================================================
 
-import re2
+import regex
 
-import ../../types
+import ../../fingerprint/types
 
 proc getLinuxOsSignatures*(): seq[OsMatchRule] =
 
