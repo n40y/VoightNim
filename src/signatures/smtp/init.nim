@@ -4,7 +4,7 @@
 ## Point d'entrée unique pour les signatures SMTP.
 ## =============================================================================
 
-import ../../types
+import ../../fingerprint/types
 import ./servers
 
 proc getSmtpSignatures*(): seq[MatchRule] =
