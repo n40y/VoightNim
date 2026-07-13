@@ -1,5 +1,5 @@
 ## =============================================================================
-## signatures/kerberos.nim
+## signatures/kerberos/init.nim
 ##
 ## Point d'entrée unique pour les signatures Kerberos.
 ## =============================================================================
