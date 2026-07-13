@@ -13,7 +13,7 @@ proc getSshProbe*(): ServiceProbe =
     ports: @[22'u16],
     timeoutMs: 1000,
     rarity: 1,
-    ssl: false,
+    transport: trTCP,
     matches: sshSignatures.getSshSignatures(),
     osMatches: osSignatures.getOsSignatures()
   )

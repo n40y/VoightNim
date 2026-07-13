@@ -5,6 +5,7 @@ import ../fingerprint/utils
 import ../signatures/http/init as httpSignatures
 import ../signatures/os/init as osSignatures
 
+
 proc getHttpProbe*(): ServiceProbe =
   result = ServiceProbe(
     probeType: ptHTTP,
@@ -21,7 +22,7 @@ proc getHttpProbe*(): ServiceProbe =
 
     rarity: 1,
 
-    ssl: false,
+    transport: trTCP,
 
     matches: httpSignatures.getHttpSignatures(),
 

@@ -12,6 +12,6 @@ proc getSmtpProbe*(): ServiceProbe =
     ports: @[25'u16, 465'u16, 587'u16],
     timeoutMs: 1500,
     rarity: 1,
-    ssl: false,
+    transport: trTCP,
     matches: smtpSignatures.getSmtpSignatures()
   )

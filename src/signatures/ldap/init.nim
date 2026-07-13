@@ -1,14 +1,15 @@
 ## =============================================================================
-## signatures/redis/init.nim
+## signatures/kerberos.nim
 ##
-## Point d'entrée unique pour les signatures Redis.
+## Point d'entrée unique pour les signatures LDAP.
 ## =============================================================================
+
 
 import ../../fingerprint/types
 import ./servers
 
 
-proc getRedisSignatures*(): seq[MatchRule] =
-  result = @[]
+proc getLdapSignatures*(): seqq[MatchRule] = 
+    result = @[]
 
-  result.add getRedisServerSignatures()
+    result.add getLdapServerSignatures()

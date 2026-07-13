@@ -12,6 +12,6 @@ proc getRedisProbe*(): ServiceProbe =
     ports: @[6379'u16],
     timeoutMs: 1500,
     rarity: 1,
-    ssl: false,
+    transport: trTCP,
     matches: redisSignatures.getRedisSignatures()
   )

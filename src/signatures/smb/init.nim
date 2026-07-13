@@ -1,14 +1,14 @@
 ## =============================================================================
-## signatures/redis/init.nim
+## signatures/smb/init.nim
 ##
-## Point d'entrée unique pour les signatures Redis.
+## Point d'entrée unique pour les signatures SMB.
 ## =============================================================================
 
 import ../../fingerprint/types
 import ./servers
 
 
-proc getRedisSignatures*(): seq[MatchRule] =
-  result = @[]
+proc getSmbSignatures*(): seq[MatchRule] =
+    result = @[]
 
-  result.add getRedisServerSignatures()
+    result.add getSmbServerSignatures()

@@ -12,6 +12,6 @@ proc getFtpProbe*(): ServiceProbe =
     ports: @[21'u16],
     timeoutMs: 1000,
     rarity: 1,
-    ssl: false,
+    transport: trTCP,
     matches: ftpSignatures.getFtpSignatures()
   )

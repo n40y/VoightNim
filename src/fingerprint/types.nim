@@ -6,6 +6,7 @@
 
 import regex
 
+
 type
   ProbeType* = enum
     ptNull,
@@ -17,6 +18,7 @@ type
     ptPOP3,
     ptIMAP,
     ptLDAP,
+    ptLDAPS,
     ptSMB,
     ptRDP,
     ptDNS,
@@ -28,12 +30,23 @@ type
     ptSNMP,
     ptMemcached,
     ptElastic,
-    ptDocker
+    ptDocker,
+    ptKerberos,
+    ptRPC,
+    ptNTP,
+    ptVNC
+
+  Transport* = enum 
+    trTCP,
+    trUDP,
+    trTLS
 
   ServiceId* = enum
     sidUnknown,
 
-    ## Web servers
+    ## -------------------------
+    ## HTTP
+    ## -------------------------
     sidNginx,
     sidApache,
     sidCaddy,
@@ -41,48 +54,55 @@ type
     sidOpenResty,
     sidIIS,
 
-    ## Reverse Proxy / CDN
+    ## Reverse Proxy
     sidCloudflare,
     sidTraefik,
     sidEnvoy,
+    sidHAProxy,
 
-    ## Application servers (WSGI/ASGI/.NET)
+    ## Runtime
     sidGunicorn,
     sidUvicorn,
     sidKestrel,
-
-    ## Runtime
     sidPHP,
     sidASPNet,
     sidNodeJS,
 
-    ## Framework
+    ## Frameworks
     sidExpress,
     sidLaravel,
     sidDjango,
     sidFlask,
 
+    ## -------------------------
     ## SSH
+    ## -------------------------
     sidOpenSSH,
     sidLibSSH,
     sidDropbear,
     sidCiscoSSH,
     sidSunSSH,
 
+    ## -------------------------
     ## FTP
+    ## -------------------------
     sidVsftpd,
     sidProFTPd,
     sidFileZilla,
     sidPureFTPd,
     sidMicrosoftFTP,
 
-    ## Mail
+    ## -------------------------
+    ## SMTP
+    ## -------------------------
     sidPostfix,
     sidExim,
     sidExchange,
     sidSendmail,
 
+    ## -------------------------
     ## Databases
+    ## -------------------------
     sidRedis,
     sidMySQL,
     sidMariaDB,
@@ -90,58 +110,91 @@ type
     sidMongoDB,
     sidMemcached,
 
+    ## -------------------------
     ## LDAP
+    ## -------------------------
     sidOpenLDAP,
     sidActiveDirectory,
+    sidApacheDS,
+    sid389DirectoryServer,
+    sidRedHatDirectoryServer,
+    sidOpenDJ,
+    sidOpenDS,
+    sidOracleUnifiedDirectory,
+    sidIBMSecurityDirectoryServer,
+    sidForgeRockDS,
 
+    ## -------------------------
+    ## SMB
+    ## -------------------------
+    sidSamba,
+    sidWindowsSMB,
+    sidSMB20,
+    sidSMB21,
+    sidSMB30,
+    sidSMB311,
+    sidSynologyDSM,
+    sidTrueNAS,
+    sidNetApp,
+    sidQNAP,
+
+    ## -------------------------
+    ## Kerberos
+    ## -------------------------
+    sidKerberos,
+    sidMITKerberos,
+    sidHeimdal,
+    sidMicrosoftKerberos,
+    sidFreeIPA,
+    sidSambaKerberos,
+
+    ## -------------------------
     ## Monitoring
+    ## -------------------------
     sidGrafana,
     sidPrometheus,
     sidElastic,
 
+    ## -------------------------
     ## Containers
+    ## -------------------------
     sidDocker,
     sidKubernetes,
 
+    ## -------------------------
     ## MQTT
+    ## -------------------------
     sidMosquitto,
     sidEMQX
 
+
   ServiceInfo* = object
     id*: ServiceId
-
+    protocol*: ProbeType
     product*: string
-
     vendor*: string
-
     family*: string
-
     homepage*: string
-
     cpe*: string
-
     defaultPorts*: seq[uint16]
 
+
   MatchRule* = object
-    pattern*: Regex2
-
-    service*: ServiceId
-
-    versionGroup*: int
-
-    confidence*: uint8
-
-    headersOnly*: bool  ## si true, la regex ne doit être testée que sur les
+    pattern*:         Regex2
+    service*:         ServiceId
+    versionGroup*:    int
+    confidence*:      uint8
+    headersOnly*:     bool  ## si true, la regex ne doit être testée que sur les
                          ## en-têtes HTTP (pas sur le corps de la réponse)
+
 
   Fingerprint* = object
     info*: ServiceInfo
+    version*:     string
+    confidence*:  uint8
+    banner*:      string
+    score*:       float32
 
-    version*: string
-
-    confidence*: uint8
-
-    banner*: string
 
   OsFamily* = enum
     ofUnknown,
@@ -172,50 +225,41 @@ type
     ## macOS
     osMacOS
 
+
   OsInfo* = object
     id*: OsId
-
     name*: string
-
     family*: OsFamily
-
     cpe*: string
+
 
   OsMatchRule* = object
     pattern*: Regex2
-
     os*: OsId
-
     versionGroup*: int
-
     confidence*: uint8
-
     headersOnly*: bool
+
 
   OsFingerprint* = object
     info*: OsInfo
-
     version*: string
-
     confidence*: uint8
-
     banner*: string
+
 
   ServiceProbe* = ref object
     probeType*: ProbeType
-
+    description*: string
     name*: string
-
     payload*: seq[byte]
-
     ports*: seq[uint16]
-
-    ssl*: bool
-
+    fallbackPorts*: seq[uint16]
+    transport*: Transport
     timeoutMs*: int
-
     rarity*: uint8
-
     matches*: seq[MatchRule]
-
     osMatches*: seq[OsMatchRule]
+    # ajoutés
+    enabled*: bool
+    maxPayloadSize*: int
