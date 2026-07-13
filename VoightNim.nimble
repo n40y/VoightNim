@@ -30,11 +30,12 @@ import fingerprint/osCatalog
 import fingerprint/utils
 
 # Sondes
-import probes/http
-import probes/ssh
 import probes/ftp
+import probes/http
 import probes/redis
 import probes/smtp
+import probes/ssh
+
 
 # Signatures
 import signatures/http/init
@@ -43,3 +44,7 @@ import signatures/ftp/init
 import signatures/redis/init
 import signatures/smtp/init
 import signatures/os/init
+
+import signatures/kerberos/init
+import signatures/ldap/init
+import signatures/smb/init
