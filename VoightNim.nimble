@@ -36,6 +36,10 @@ import probes/redis
 import probes/smtp
 import probes/ssh
 
+# ajoutées :
+import probes/kerberos
+import probes/ldap
+import probes/smb
 
 # Signatures
 import signatures/http/init
@@ -44,7 +48,7 @@ import signatures/ftp/init
 import signatures/redis/init
 import signatures/smtp/init
 import signatures/os/init
-
+# ajoutées :
 import signatures/kerberos/init
 import signatures/ldap/init
 import signatures/smb/init

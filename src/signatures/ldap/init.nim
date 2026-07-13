@@ -9,7 +9,7 @@ import ../../fingerprint/types
 import ./servers
 
 
-proc getLdapSignatures*(): seqq[MatchRule] = 
+proc getLdapSignatures*(): seq[MatchRule] = 
     result = @[]
 
     result.add getLdapServerSignatures()

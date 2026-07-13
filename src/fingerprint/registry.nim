@@ -6,6 +6,10 @@ import ../probes/ssh
 import ../probes/redis
 import ../probes/ftp
 import ../probes/smtp
+import ../probes/kerberos
+import ../probes/ldap
+import ../probes/smb
+
 
 proc getAllProbes*(): seq[ServiceProbe] =
     @[
@@ -14,4 +18,7 @@ proc getAllProbes*(): seq[ServiceProbe] =
         getRedisProbe(),
         getFtpProbe(),
         getSmtpProbe(),
+        getKerberosProbe(),
+        getLdapProbe(),
+        getSmbProbe()
     ]

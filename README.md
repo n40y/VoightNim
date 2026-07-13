@@ -20,11 +20,12 @@ A lightweight, dependency-free TCP port scanner and service fingerprinter writte
 - **Async, event-loop based scanning** (`std/asyncdispatch` + `std/asyncnet`) — no OS thread-per-port overhead
 - **Cross-platform** — runs on Windows, Linux, and macOS without platform-specific socket code
 - **Automatic concurrency calibration** — reads the system's file descriptor limit (`ulimit -n` on POSIX) and caps concurrent connections accordingly, instead of relying on a blind, fixed thread count
-- **Service fingerprinting on multiple protocols** — grabs banners on open ports and matches them against an embedded signature database (HTTP server headers, SSH, FTP, SMTP, Redis) using a pure-Nim regex engine (no PCRE/C dependency)
+- **Service fingerprinting on multiple protocols** — grabs banners on open ports and matches them against an embedded signature database (HTTP server headers, SSH, FTP, SMTP, Redis, LDAP, SMB, Kerberos) using a pure-Nim regex engine (no PCRE/C dependency)
 - **Stacked, multi-result detection (unlike a single-verdict scanner)** — a single banner can surface *several* independent findings at once (e.g. web server + runtime + framework + OS), instead of collapsing to one guess per port
 - **OS fingerprinting from banner hints** — infers the underlying OS (Ubuntu, Debian, CentOS, RHEL, Fedora, Windows) from clues leaked by other services (e.g. `Server: Apache/2.4.41 (Ubuntu)`, IIS implying Windows), surfaced independently from the service detection
 - **JSON output mode** for scripting and piping into other tools
 - **Custom port lists or ranges** (`22,80,443` or `8000-8010`), with a built-in list of common ports as a default
+
 
 ## Requirements
 
@@ -32,15 +33,17 @@ A lightweight, dependency-free TCP port scanner and service fingerprinter writte
 - [Nimble](https://github.com/nim-lang/nimble) (ships with Nim)
 - Nimble packages: `docopt`, `regex`
 
+
 ## Installation
 
 ```bash
-git clone https://github.com/n40y/VoightNim.git
+git clone [https://github.com/n40y/VoightNim.git](https://github.com/n40y/VoightNim.git)
 cd VoightNim
 
 nimble install docopt
 nimble install regex
 ```
+
 
 ## Building
 
@@ -53,6 +56,7 @@ nim c -d:release src/VoightNim.nim
 ```
 
 This produces `src/VoightNim` (or `src/VoightNim.exe` on Windows).
+
 
 ## Usage
 
@@ -96,19 +100,14 @@ Machine-readable output:
 
 ## Project structure
 
+```
 | Path | Responsibility |
 |------|-----------------|
+src/
 | `VoightNim.nim` | Point d'entrée principal (orchestration scan + fingerprinting + affichage) |
 | `cli.nim` | Gestion des arguments CLI (docopt) |
 | `prober.nim` | Scan des ports et récupération de bannière (async, sans threads) |
 | `topports.nim` | Liste des ports courants |
-
-```
-src/
-├── VoightNim.nim
-├── cli.nim
-├── prober.nim
-├── topports.nim
 │
 ├── fingerprint/            # Moteur de fingerprinting
 │   ├── engine.nim          # API haut niveau : detect, detectAll, detectOs, detectAllOs
@@ -124,7 +123,10 @@ src/
 │   ├── ssh.nim               # appelle signatures/ssh/init.nim + signatures/os/init.nim
 │   ├── ftp.nim               # appelle signatures/ftp/init.nim
 │   ├── smtp.nim              # appelle signatures/smtp/init.nim
-│   └── redis.nim             # appelle signatures/redis/init.nim
+│   ├── redis.nim             # appelle signatures/redis/init.nim
+│   ├── ldap.nim              # appelle signatures/ldap/init.nim
+│   ├── smb.nim               # appelle signatures/smb/init.nim
+│   └── kerberos.nim          # appelle signatures/kerberos/init.nim
 │
 └── signatures/              # Règles de détection, organisées par protocole/axe
     ├── http/
@@ -145,6 +147,15 @@ src/
     ├── redis/
     │   ├── init.nim
     │   └── servers.nim       # Redis
+    ├── ldap/
+    │   ├── init.nim
+    │   └── servers.nim       # OpenLDAP, Active Directory, ApacheDS...
+    ├── smb/
+    │   ├── init.nim
+    │   └── servers.nim       # Samba, Windows SMB (SMB2, SMB3...)
+    ├── kerberos/
+    │   ├── init.nim
+    │   └── servers.nim       # MIT Kerberos, Heimdal, Microsoft Kerberos...
     └── os/
         ├── init.nim
         ├── linux.nim         # Ubuntu, Debian, CentOS, RHEL, Fedora
