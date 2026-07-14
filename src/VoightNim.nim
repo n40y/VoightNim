@@ -63,19 +63,27 @@ proc main() =
     if r.isOpen:
       inc openCount
 
-      let banner = waitFor grabBanner(target, r.port, allProbes)
-
+      var banner = ""
       var services: seq[Fingerprint] = @[]
       var osResults: seq[OsFingerprint] = @[]
 
-      if banner.len > 0:
-        # On teste le banner contre TOUS les probes (pas seulement celui
-        # qui a répondu) : rien n'empêche un service non-standard de
-        # répondre sur un port inattendu, et une regex qui ne correspond
-        # pas ne coûte quasiment rien.
-        for probe in allProbes:
-          services.add engine.detectAll(banner, probe)
-          osResults.add engine.detectAllOs(banner, probe)
+      try:
+        banner = waitFor grabBanner(target, r.port, allProbes)
+
+        if banner.len > 0:
+          # On teste le banner contre TOUS les probes (pas seulement celui
+          # qui a répondu) : rien n'empêche un service non-standard de
+          # répondre sur un port inattendu, et une regex qui ne correspond
+          # pas ne coûte quasiment rien.
+          for probe in allProbes:
+            services.add engine.detectAll(banner, probe)
+            osResults.add engine.detectAllOs(banner, probe)
+      except CatchableError as e:
+        # Un port ne doit jamais faire perdre les résultats des autres :
+        # on log l'erreur en mode verbose et on continue le scan.
+        if not jsonMode and args["--verbose"]:
+          styledEcho fgRed, "[!] Port ", $r.port, " : erreur pendant l'analyse (",
+                     e.msg, ")"
 
       scanResults.add (r.port, true, banner, services, osResults)
     else:
