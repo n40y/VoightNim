@@ -15,7 +15,7 @@ proc getRuntimeSignatures*(): seq[MatchRule] =
   result = @[]
 
   result.add MatchRule(
-    pattern: re2"(?i)X-Powered-By:\s*PHP/?([\d.]*)",
+    pattern: re2"(?i)X-Powered-By:\s*PHP(?:/([\d.]+))?",
     service: sidPHP,
     versionGroup: 0,
     confidence: 95,
