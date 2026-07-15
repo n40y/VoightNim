@@ -1,4 +1,5 @@
 # src/VoightNim.nim
+
 import cli
 import docopt
 import std/[terminal, strutils, asyncdispatch, json, os]
@@ -48,39 +49,40 @@ proc main() =
       styledEcho fgRed, "[!] No valid ports to scan. Check your <ports> argument."
     quit(1)
 
-  # Construit la liste des probes UNE SEULE FOIS (regex compilées, etc.),
-  # réutilisée pour chaque port ouvert plutôt que reconstruite à chaque fois.
+  # Liste des probes
   let allProbes = getAllProbes()
 
-  # Le coeur du scan : scanRange gère la concurrence (calibrée par ulimit) et le batching
+  # Scan des ports
   let rawResults = scanRange(target, portsToScan, speed)
 
-  # Une seule collecte de résultats (avec fingerprinting service + OS),
-  # réutilisée ensuite pour l'affichage texte OU JSON — pas de double scan.
+  # Collecte des résultats
   var scanResults: seq[ScanResult] = @[]
   var openCount = 0
+
   for r in rawResults:
     if r.isOpen:
       inc openCount
 
-      let banner = waitFor grabBanner(target, r.port, allProbes)
-
+      var banner = ""
       var services: seq[Fingerprint] = @[]
       var osResults: seq[OsFingerprint] = @[]
 
-      if banner.len > 0:
-        # On teste le banner contre TOUS les probes (pas seulement celui
-        # qui a répondu) : rien n'empêche un service non-standard de
-        # répondre sur un port inattendu, et une regex qui ne correspond
-        # pas ne coûte quasiment rien.
-        for probe in allProbes:
-          services.add engine.detectAll(banner, probe)
-          osResults.add engine.detectAllOs(banner, probe)
+      try:
+        banner = waitFor grabBanner(target, r.port, allProbes)
+
+        if banner.len > 0:
+          for probe in allProbes:
+            services.add engine.detectAll(banner, probe)
+            osResults.add engine.detectAllOs(banner, probe)
+      except CatchableError as e:
+        if not jsonMode and args["--verbose"]:
+          styledEcho fgRed, "[!] Port ", $r.port, " : erreur pendant l'analyse (", e.msg, ")"
 
       scanResults.add (r.port, true, banner, services, osResults)
     else:
       scanResults.add (r.port, false, "", @[], @[])
 
+  # === AFFICHAGE JSON ===
   if jsonMode:
     var jsonArr = newJArray()
     for sr in scanResults:
@@ -116,27 +118,35 @@ proc main() =
       "results": jsonArr
     }
     echo $output
+
+  # === AFFICHAGE TEXTE (amélioré) ===
   else:
     for sr in scanResults:
       if sr.isOpen:
         styledEcho fgGreen, "[+] Port ", fgWhite, styleBright, $sr.port,
                    fgGreen, styleBright, " is OPEN"
 
+        var hasInfo = false
+
         for fp in sr.services:
-          let versionStr = if fp.version.len > 0: " " & fp.version else: ""
-          styledEcho "      ", fgCyan, "└─ service : ", fgWhite, styleBright,
-                     fp.info.product, versionStr, fgWhite, " (", $fp.confidence, "%)"
+          if fp.confidence >= 40:   # filtre de confiance
+            hasInfo = true
+            let versionStr = if fp.version.len > 0: " " & fp.version else: ""
+            styledEcho "      ", fgCyan, "└─ service : ", fgWhite, styleBright,
+                       fp.info.product, versionStr, fgWhite, " (", $fp.confidence, "%)"
 
         for osfp in sr.osResults:
-          let versionStr = if osfp.version.len > 0: " " & osfp.version else: ""
-          styledEcho "      ", fgMagenta, "└─ os      : ", fgWhite, styleBright,
-                     osfp.info.name, versionStr, fgWhite, " (", $osfp.confidence, "%)"
+          if osfp.confidence >= 40:
+            hasInfo = true
+            let versionStr = if osfp.version.len > 0: " " & osfp.version else: ""
+            styledEcho "      ", fgMagenta, "└─ os      : ", fgWhite, styleBright,
+                       osfp.info.name, versionStr, fgWhite, " (", $osfp.confidence, "%)"
 
-        if sr.services.len == 0 and sr.osResults.len == 0:
+        if not hasInfo:
           if sr.banner.len > 0:
-            let rawPreview = sr.banner.strip().replace("\r\n", " ")
+            let rawPreview = sr.banner.strip().replace("\r\n", " ").replace("\n", " ")
             styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite,
-                       "raw banner: ", rawPreview[0 ..< min(80, rawPreview.len)]
+                       "raw banner: ", rawPreview[0 ..< min(100, rawPreview.len)]
           else:
             styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite, "no banner received"
 

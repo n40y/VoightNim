@@ -1,10 +1,12 @@
+#===============================================================================
 # src/prober.nim
 #
 # Compilation : nim c src/VoightNim.nim
-# (pas besoin de --threads:on ici : asyncdispatch tourne sur un seul thread
-# avec un event loop, contrairement à la version précédente basée sur threadpool)
+# Pas besoin de --threads:on   car    asyncdispatch   tourne sur un seul thread
+# avec un event loop, contrairement à la version précédente basée sur threadpool
+#=================================================================================
 
-import std/[asyncdispatch, asyncnet, nativesockets, strutils]
+import std/[asyncdispatch, asyncnet, nativesockets, strutils, monotimes, times]
 
 import fingerprint/types
 import fingerprint/utils
@@ -12,7 +14,9 @@ import fingerprint/utils
 when not defined(windows):
     import std/posix
 
+
 const DefaultTimeoutMs* = 800
+
 
 # --- Calibration de la concurrence selon la limite système -----------------
 
@@ -31,42 +35,59 @@ proc getMaxConcurrency*(requested: int): int =
         else:
             result = min(requested, 256)  # repli prudent si getrlimit échoue
 
+
 # --- Scan d'un port unique (async) ------------------------------------------
 
 proc scanPortAsync*(targetIP: string, port: int, timeoutMs: int = DefaultTimeoutMs): Future[bool] {.async.} =
     ## Tente une connexion TCP non-bloquante sur (targetIP, port).
-    ## Retourne true si le port est ouvert, false si fermé/filtré/timeout.
+    ## Retourne true si le port est ouvert, false si fermé/filtré/timeout/erreur.
     let socket = newAsyncSocket(Domain.AF_INET, SockType.SOCK_STREAM, Protocol.IPPROTO_TCP, buffered = false)
-    let connectFut = socket.connect(targetIP, Port(port))
 
-    # withTimeout renvoie true si connectFut s'est terminé (succès OU échec)
-    # dans le délai imparti, false si le délai est dépassé (encore en attente)
-    let completed = await withTimeout(connectFut, timeoutMs)
+    try:
+        let connectFut = socket.connect(targetIP, Port(port))
 
-    if not completed:
-        # Timeout : le connect() est encore EN VOL côté OS. Fermer le socket
-        # maintenant est dangereux : le descripteur libéré peut être réattribué
-        # à un socket créé juste après (port suivant), et quand ce vieux
-        # Future finit par se terminer en arrière-plan, il agit sur le
-        # mauvais descripteur -> "Bad file descriptor" (piège classique
-        # d'asyncdispatch sous forte concurrence contre une vraie cible
-        # réseau, où les timeouts sont bien plus fréquents qu'en local).
-        # On reporte donc la fermeture à l'intérieur du callback du futur,
-        # pour qu'elle n'ait lieu qu'une fois l'opération réellement finie.
-        connectFut.addCallback(proc() =
+        # withTimeout renvoie true si connectFut s'est terminé (succès OU échec)
+        # dans le délai imparti, false si le délai est dépassé (encore en attente)
+        let completed = await withTimeout(connectFut, timeoutMs)
+
+        if not completed:
+            # Timeout : le connect() est encore EN VOL côté OS (cas typique d'un
+            # port filtré, sans RST). On ferme quand même tout de suite :
+            # asyncnet.close() désenregistre le fd du sélecteur AVANT de le
+            # fermer réellement, donc même si l'OS recycle ce numéro de fd pour
+            # un socket créé juste après, l'event loop ne peut plus jamais
+            # rattacher un évènement tardif à l'ancien Future (il n'est plus
+            # dans la table du sélecteur). Sans ça, chaque port filtré fuit un
+            # descripteur pendant potentiellement des dizaines de secondes
+            # (le vrai timeout de connect() côté noyau) : sur un grand range,
+            # ça épuise `ulimit -n` chunk après chunk, bien avant la fin du scan.
+            try:
+                socket.close()
+            except CatchableError:
+                discard
+            return false
+
+        socket.close()
+
+        if connectFut.failed:
+            # Connexion refusée / erreur réseau : on "consomme" l'erreur pour
+            # éviter qu'elle remonte comme exception non gérée
+            discard connectFut.error
+            return false
+
+        return true
+
+    except CatchableError:
+        # Filet de sécurité : QUOI QU'IL ARRIVE, une erreur réseau sur un port
+        # (refus de connexion, reset, hôte injoignable, etc.) ne doit jamais
+        # remonter comme exception non gérée -- ça ferait planter tout le scan
+        # via all()/waitFor, qui propage l'échec d'un seul port à l'ensemble
+        # du chunk. On traite simplement le port comme fermé.
+        try:
             socket.close()
-        )
+        except CatchableError:
+            discard
         return false
-
-    socket.close()
-
-    if connectFut.failed:
-        # Connexion refusée / erreur réseau : on "consomme" l'erreur pour
-        # éviter qu'elle remonte comme exception non gérée
-        discard connectFut.error
-        return false
-
-    return true
 
 # --- Parsing de la liste de ports (ex: "80,443,8000-8010") -----------------
 
@@ -79,6 +100,7 @@ proc parsePorts*(portsRaw: string): seq[int] =
         if '-' in cleaned:
             let parts = cleaned.split('-')
             if parts.len == 2:
+
                 try:
                     let startPort = parseInt(parts[0].strip())
                     let endPort = parseInt(parts[1].strip())
@@ -87,13 +109,16 @@ proc parsePorts*(portsRaw: string): seq[int] =
                             result.add(p)
                 except ValueError:
                     discard
+
         else:
+
             try:
                 let p = parseInt(cleaned)
                 if p > 0 and p <= 65535:
                     result.add(p)
             except ValueError:
                 discard
+
 
 # --- Scan concurrent d'une liste de ports (event loop, pas de threads) -----
 
@@ -105,13 +130,14 @@ proc scanChunk(targetIP: string, ports: seq[int], timeoutMs: int): Future[seq[bo
         futures.add scanPortAsync(targetIP, p, timeoutMs)
     result = await all(futures)
 
-proc scanRange*(targetIP: string, ports: seq[int], speed: int,
-                 timeoutMs: int = DefaultTimeoutMs): seq[tuple[port: int, isOpen: bool]] =
+
+proc scanRange*(targetIP: string, ports: seq[int], speed: int, timeoutMs: int = DefaultTimeoutMs): seq[tuple[port: int, isOpen: bool]] =
     ## Scanne `ports` par paquets, calibrés selon `speed` ET la limite système.
     ## `all()` préserve l'ordre : results[i] correspond bien à chunkPorts[i].
     result = @[]
     let effectiveSpeed = getMaxConcurrency(speed)
     var i = 0
+    
     while i < ports.len:
         let chunkEnd = min(i + effectiveSpeed, ports.len)
         let chunkPorts = ports[i ..< chunkEnd]
@@ -122,46 +148,74 @@ proc scanRange*(targetIP: string, ports: seq[int], speed: int,
 
         i = chunkEnd
 
+
 # --- Récupération de bannière sur un port confirmé ouvert -------------------
 
-proc grabBanner*(
-    targetIP: string,
-    port: int,
-    probes: seq[ServiceProbe],
-    timeoutMs: int = DefaultTimeoutMs
-): Future[string] {.async.} =
-    ## À appeler uniquement sur un port déjà confirmé ouvert par scanRange.
-    ## Ouvre une NOUVELLE connexion dédiée (celle du scan initial est fermée).
-    ## Essaie chaque probe dans l'ordre jusqu'à obtenir une réponse non vide ;
-    ## ne fait AUCUNE analyse de la bannière (c'est le rôle de fingerprint/engine).
-    let socket = newAsyncSocket(Domain.AF_INET, SockType.SOCK_STREAM, Protocol.IPPROTO_TCP, buffered = false)
+proc tryProbe(targetIP: string, port: int, probe: ServiceProbe, timeoutMs: int): Future[string] {.async.} =
+  let socket = newAsyncSocket(Domain.AF_INET, SockType.SOCK_STREAM, Protocol.IPPROTO_TCP, buffered = false)
+  try:
     let connectFut = socket.connect(targetIP, Port(port))
-
     if not await withTimeout(connectFut, timeoutMs):
-        socket.close()
-        return ""
-
+      socket.close()
+      return ""
     if connectFut.failed:
-        discard connectFut.error
-        socket.close()
-        return ""
+      discard connectFut.error
+      socket.close()
+      return ""
 
-    result = ""
+    if probe.payload.len > 0:
+      await socket.send(toString(probe.payload))
 
-    for probe in probes:
-        try:
-            if probe.payload.len > 0:
-                await socket.send(toString(probe.payload))
+    var banner = ""
+    let startTime = getMonoTime()
 
-            let recvFut = socket.recv(4096)
-            if not await withTimeout(recvFut, probe.timeoutMs):
-                continue  # rien reçu à temps sur cette sonde, on tente la suivante
+    while true:
+      let elapsed = getMonoTime() - startTime
+      if elapsed > initDuration(milliseconds = timeoutMs):
+        break
 
-            let banner = recvFut.read()
-            if banner.len > 0:
-                result = banner
-                break
-        except OSError:
-            break  # socket cassé côté distant, inutile d'insister
+      let recvFut = socket.recv(8192)
+      if not await withTimeout(recvFut, 600):
+        break
+      if recvFut.failed:
+        break
+      let chunk = recvFut.read()
+      if chunk.len == 0:
+        break
+      banner.add(chunk)
+      if banner.len > 32768:
+        break
 
     socket.close()
+    result = banner
+
+  except CatchableError:
+    try: socket.close() except: discard
+    result = ""
+
+
+proc grabBanner*(targetIP: string, port: int, probes: seq[ServiceProbe], timeoutMs: int = DefaultTimeoutMs): Future[string] {.async.} =
+    ## À appeler uniquement sur un port déjà confirmé ouvert par scanRange.
+    ## Ne retient QUE les sondes dont `ports` contient le port scanné (c'est
+    ## tout l'intérêt de ce champ) ; si aucune sonde n'est spécifique à ce
+    ## port, retombe sur une sonde passive (payload vide) pour au moins
+    ## capter une bannière spontanée (services qui parlent en premier).
+    ## Ne fait AUCUNE analyse de la bannière (c'est le rôle de fingerprint/engine).
+    let p16 = uint16(port)
+    var candidates: seq[ServiceProbe] = @[]
+    for probe in probes:
+        if p16 in probe.ports:
+            candidates.add probe
+
+    if candidates.len == 0:
+        candidates.add ServiceProbe(
+            probeType: ptNull, name: "passive", payload: @[],
+            ports: @[], transport: trTCP, timeoutMs: timeoutMs
+        )
+
+    result = ""
+    for probe in candidates:
+        let banner = await tryProbe(targetIP, port, probe, timeoutMs)
+        if banner.len > 0:
+            result = banner
+            break

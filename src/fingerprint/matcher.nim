@@ -13,7 +13,6 @@ proc targetFor(
     headers: string,
     fullBanner: string
 ): string =
-  ## Choisit sur quelle partie du banner appliquer la regex de la règle.
   if headersOnly:
     headers
   else:
@@ -24,27 +23,19 @@ proc extractGroup(
     m: RegexMatch2,
     groupIndex: int
 ): string =
-  ## groupIndex est 0-indexé PARMI LES GROUPES CAPTURANTS (pas le match
-  ## entier) : re2"Server: nginx/([\d.]+)" n'a qu'un seul groupe, donc sa
-  ## version est à l'index 0. -1 signifie "pas de version à extraire".
   if groupIndex < 0:
     return ""
 
   try:
     let bounds = m.group(groupIndex)
-
-    # reNonCapture : le groupe existe dans le pattern mais n'a pas participé
-    # à ce match précis (ex: groupe optionnel absent)
     if bounds != reNonCapture:
       return target[bounds]
-
   except IndexDefect, RangeDefect:
-    discard  # ce numéro de groupe n'existe pas du tout dans ce pattern
-
+    discard
   ""
 
 # -----------------------------------------------------------------------------
-# Axe "service" (technologie détectée : nginx, PHP, Redis...)
+# Service fingerprinting
 # -----------------------------------------------------------------------------
 
 proc buildFingerprint(
@@ -53,7 +44,6 @@ proc buildFingerprint(
     m: RegexMatch2,
     rule: MatchRule
 ): Fingerprint =
-
   result.info = getService(rule.service)
   result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
@@ -64,22 +54,18 @@ proc fingerprint*(
     banner: string,
     probe: ServiceProbe
 ): Option[Fingerprint] =
-
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.matches:
-
-    let target = targetFor(rule.headersOnly, headers, banner)
+    let rawTarget = targetFor(rule.headersOnly, headers, banner)
+    let target = toSafeString(rawTarget)
     var m: RegexMatch2
 
-    if target.match(rule.pattern, m):
-
-      return some(buildFingerprint(
-        banner,
-        target,
-        m,
-        rule
-      ))
+    try:
+      if target.match(rule.pattern, m):
+        return some(buildFingerprint(banner, target, m, rule))
+    except AssertionDefect, CatchableError:
+      continue
 
   return none(Fingerprint)
 
@@ -88,27 +74,22 @@ proc fingerprintAll*(
     banner: string,
     probe: ServiceProbe
 ): seq[Fingerprint] =
-
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.matches:
-
-    let target = targetFor(rule.headersOnly, headers, banner)
+    let rawTarget = targetFor(rule.headersOnly, headers, banner)
+    let target = toSafeString(rawTarget)
     var m: RegexMatch2
 
-    if target.match(rule.pattern, m):
+    try:
+      if target.match(rule.pattern, m):
+        result.add(buildFingerprint(banner, target, m, rule))
+    except AssertionDefect, CatchableError:
+      continue
 
-      result.add(
-        buildFingerprint(
-          banner,
-          target,
-          m,
-          rule
-        )
-      )
 
 # -----------------------------------------------------------------------------
-# Axe "OS" (système d'exploitation détecté : Ubuntu, Windows...)
+# OS fingerprinting
 # -----------------------------------------------------------------------------
 
 proc buildOsFingerprint(
@@ -117,7 +98,6 @@ proc buildOsFingerprint(
     m: RegexMatch2,
     rule: OsMatchRule
 ): OsFingerprint =
-
   result.info = getOs(rule.os)
   result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
@@ -128,22 +108,18 @@ proc fingerprintOs*(
     banner: string,
     probe: ServiceProbe
 ): Option[OsFingerprint] =
-
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.osMatches:
-
-    let target = targetFor(rule.headersOnly, headers, banner)
+    let rawTarget = targetFor(rule.headersOnly, headers, banner)
+    let target = toSafeString(rawTarget)
     var m: RegexMatch2
 
-    if target.match(rule.pattern, m):
-
-      return some(buildOsFingerprint(
-        banner,
-        target,
-        m,
-        rule
-      ))
+    try:
+      if target.match(rule.pattern, m):
+        return some(buildOsFingerprint(banner, target, m, rule))
+    except AssertionDefect, CatchableError:
+      continue
 
   return none(OsFingerprint)
 
@@ -152,21 +128,15 @@ proc fingerprintAllOs*(
     banner: string,
     probe: ServiceProbe
 ): seq[OsFingerprint] =
-
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.osMatches:
-
-    let target = targetFor(rule.headersOnly, headers, banner)
+    let rawTarget = targetFor(rule.headersOnly, headers, banner)
+    let target = toSafeString(rawTarget)
     var m: RegexMatch2
 
-    if target.match(rule.pattern, m):
-
-      result.add(
-        buildOsFingerprint(
-          banner,
-          target,
-          m,
-          rule
-        )
-      )
+    try:
+      if target.match(rule.pattern, m):
+        result.add(buildOsFingerprint(banner, target, m, rule))
+    except AssertionDefect, CatchableError:
+      continue
