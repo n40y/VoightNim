@@ -1,4 +1,19 @@
-.exe
-.txt
+# Cache de compilation Nim
+nimcache/
+src/nimcache/
+nimdoc/
+
+# Exécutables et binaires
+*.exe
+*.bin
+/VoightNim
 src/VoightNim
-src/VoightNim.exe
+
+# Fichiers de configuration utilisateur / IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

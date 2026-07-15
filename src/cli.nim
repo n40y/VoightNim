@@ -1,5 +1,12 @@
-# src/cli.nim
+##=======================================================
+##
+## src/cli.nim
+## 
+## =======================================================
+
 import docopt
+import std/[strutils]
+
 
 let doc* = """
 Usage:
@@ -21,6 +28,29 @@ proc printBanner*() =
     echo "╚██╗ ██╔╝ ██║   ██║ ██║ ██║   ██║ ██╔══██║    ██║    ██║╚██╗██║ ██║ ██║╚██╔╝██║ "
     echo " ╚████╔╝  ╚██████╔╝ ██║ ╚██████╔╝ ██║  ██║    ██║    ██║ ╚████║ ██║ ██║ ╚═╝ ██║ "
     echo "  ╚═══╝    ╚═════╝  ╚═╝  ╚═════╝  ╚═╝  ╚═╝    ╚═╝    ╚═╝  ╚═══╝ ╚═╝ ╚═╝     ╚═╝ v0.1\x1B[0m\n"
+
+
+proc parsePorts*(portsRaw: string): seq[int] =
+    ## Parse les chaînes de type "80", "80,443" ou "21-25,80"
+    result = @[]
+    for part in portsRaw.split(','):
+        let trimmed = part.strip()
+        if trimmed.contains('-'):
+            let rangeParts = trimmed.split('-')
+            if rangeParts.len == 2:
+                try:
+                    let startPort = parseInt(rangeParts[0].strip())
+                    let endPort = parseInt(rangeParts[1].strip())
+                    for port in startPort .. endPort:
+                        result.add(port)
+                except ValueError:
+                    discard
+        else:
+            try:
+                result.add(parseInt(trimmed))
+            except ValueError:
+                discard
+
 
 proc parseCLI*(): auto =
     try:

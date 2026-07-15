@@ -4,16 +4,15 @@
 ##
 ##=================================================
 
-import cli
 import docopt
-import std/[terminal, strutils, asyncdispatch, json, os]
+import std/[terminal, strutils, asyncdispatch, json]
 
+import cli
 import prober
 import topports
 import fingerprint/types
 import fingerprint/registry
 import fingerprint/engine
-
 
 type ScanResult = tuple[
   port: int,
@@ -31,6 +30,7 @@ proc main() =
   let speed = parseInt($args["-s"])
 
   if not jsonMode:
+    printBanner()
     styledEcho fgCyan, "[-] Target detected  : ", fgWhite, styleBright, target
     styledEcho fgCyan, "[-] Concurrent conns : ", fgWhite, styleBright, $speed
 
@@ -43,125 +43,122 @@ proc main() =
   else:
     portsToScan = commonPorts
     if not jsonMode:
-      styledEcho fgYellow, "[!] No port specified; using common ports list (",
-                 fgWhite, styleBright, $commonPorts.len, fgYellow, " ports)."
+      styledEcho fgYellow, "[!] No port specified; using common ports list"
 
-  if portsToScan.len == 0:
-    if jsonMode:
-      echo $(%*{"error": "No valid ports to scan"})
-    else:
-      styledEcho fgRed, "[!] No valid ports to scan. Check your <ports> argument."
-    quit(1)
+  let maxConcurrency = getMaxConcurrency(speed)
 
-  # Liste des probes
-  let allProbes = getAllProbes()
+  # 1. Scan initial des ports en parallèle
+  let rawResults = waitFor scanChunk(target, portsToScan, maxConcurrency)
 
-  # Scan des ports
-  let rawResults = scanRange(target, portsToScan, speed)
-
-  # Collecte des résultats
-  var scanResults: seq[ScanResult] = @[]
-  var openCount = 0
-
+  # 2. Filtrage des ports ouverts
+  var openPorts: seq[int] = @[]
   for r in rawResults:
     if r.isOpen:
-      inc openCount
+      openPorts.add(r.port)
 
-      var banner = ""
-      var services: seq[Fingerprint] = @[]
-      var osResults: seq[OsFingerprint] = @[]
+  var scanResults: seq[ScanResult] = @[]
 
-      try:
-        banner = waitFor grabBanner(target, r.port, allProbes)
+  if openPorts.len > 0:
+    if not jsonMode:
+      styledEcho fgYellow, "[!] Gathering banners concurrently for ", fgWhite, styleBright, $openPorts.len, fgYellow, " ports..."
 
-        if banner.len > 0:
-          for probe in allProbes:
-            services.add engine.detectAll(banner, probe)
-            osResults.add engine.detectAllOs(banner, probe)
-      except CatchableError as e:
-        if not jsonMode and args["--verbose"]:
-          styledEcho fgRed, "[!] Port ", $r.port, " : erreur pendant l'analyse (", e.msg, ")"
+    # 3. Lancement simultané du banner grabbing sur tous les ports ouverts
+    var bannerFutures: seq[Future[string]] = @[]
+    let allProbes = getAllProbes()
+    for port in openPorts:
+      bannerFutures.add(grabBanner(target, port, allProbes, DefaultTimeoutMs))
 
-      scanResults.add (r.port, true, banner, services, osResults)
-    else:
-      scanResults.add (r.port, false, "", @[], @[])
+    # 4. Attente asynchrone globale (Résolution du goulot d'étranglement)
+    let banners = waitFor all(bannerFutures)
 
-  # === AFFICHAGE JSON ===
+    # 5. Analyse des signatures avec le moteur de fingerprinting
+    for i, port in openPorts:
+      let banner = banners[i]
+      var matchedServices: seq[Fingerprint] = @[]
+      var matchedOs: seq[OsFingerprint] = @[]
+      
+      for probe in allProbes:
+        if uint16(port) in probe.ports or probe.ports.len == 0:
+          let sFp = detectAll(banner, probe)
+          if sFp.len > 0:
+            for f in sFp: matchedServices.add(f)
+          
+          let oFp = detectAllOs(banner, probe)
+          if oFp.len > 0:
+            for o in oFp: matchedOs.add(o)
+
+      scanResults.add((
+        port: port,
+        isOpen: true,
+        banner: banner,
+        services: matchedServices,
+        osResults: matchedOs
+      ))
+
+  # 6. Rendu des résultats (JSON ou Console stylisée)
   if jsonMode:
     var jsonArr = newJArray()
     for sr in scanResults:
-      var entry = %*{"port": sr.port, "open": sr.isOpen}
+      var obj = newJObject()
+      obj["port"] = %sr.port
+      obj["isOpen"] = %sr.isOpen
+      obj["banner"] = %sr.banner
+      
+      var servicesArr = newJArray()
+      for fp in sr.services:
+        var sObj = newJObject()
+        sObj["product"] = %fp.info.product
+        sObj["version"] = %fp.version
+        sObj["confidence"] = %int(fp.confidence)
+        servicesArr.add(sObj)
+      obj["services"] = servicesArr
 
-      if sr.isOpen:
-        var servicesArr = newJArray()
-        for fp in sr.services:
-          servicesArr.add %*{
-            "product": fp.info.product,
-            "vendor": fp.info.vendor,
-            "version": fp.version,
-            "confidence": fp.confidence
-          }
-        entry["services"] = servicesArr
-
-        var osArr = newJArray()
-        for osfp in sr.osResults:
-          osArr.add %*{
-            "name": osfp.info.name,
-            "version": osfp.version,
-            "confidence": osfp.confidence
-          }
-        entry["os"] = osArr
-
-      jsonArr.add entry
-
-    let output = %*{
-      "target": target,
-      "speed": speed,
-      "portsScanned": portsToScan.len,
-      "openCount": openCount,
-      "results": jsonArr
-    }
-    echo $output
-
-  # === AFFICHAGE TEXTE (amélioré) ===
+      var osArr = newJArray()
+      for osfp in sr.osResults:
+        var oObj = newJObject()
+        oObj["name"] = %osfp.info.name
+        oObj["version"] = %osfp.version
+        oObj["confidence"] = %int(osfp.confidence)
+        osArr.add(oObj)
+      obj["os"] = osArr
+      
+      jsonArr.add(obj)
+    echo $jsonArr
   else:
     for sr in scanResults:
-      if sr.isOpen:
-        styledEcho fgGreen, "[+] Port ", fgWhite, styleBright, $sr.port,
-                   fgGreen, styleBright, " is OPEN"
+      styledEcho fgGreen, "[+] Port ", fgWhite, styleBright, $sr.port, fgGreen, " is OPEN"
+      var hasInfo = false
 
-        var hasInfo = false
+      for fp in sr.services:
+        if fp.confidence >= 50:
+          hasInfo = true
+          let versionStr = if fp.version.len > 0: " " & fp.version else: ""
+          styledEcho "      ", fgCyan, "└─ service : ", fgWhite, styleBright,
+                     fp.info.product, versionStr, fgWhite, " (", $fp.confidence, "%)"
 
-        for fp in sr.services:
-          if fp.confidence >= 40:   # filtre de confiance
-            hasInfo = true
-            let versionStr = if fp.version.len > 0: " " & fp.version else: ""
-            styledEcho "      ", fgCyan, "└─ service : ", fgWhite, styleBright,
-                       fp.info.product, versionStr, fgWhite, " (", $fp.confidence, "%)"
+      for osfp in sr.osResults:
+        if osfp.confidence >= 40:
+          hasInfo = true
+          let versionStr = if osfp.version.len > 0: " " & osfp.version else: ""
+          styledEcho "      ", fgMagenta, "└─ os      : ", fgWhite, styleBright,
+                     osfp.info.name, versionStr, fgWhite, " (", $osfp.confidence, "%)"
 
-        for osfp in sr.osResults:
-          if osfp.confidence >= 40:
-            hasInfo = true
-            let versionStr = if osfp.version.len > 0: " " & osfp.version else: ""
-            styledEcho "      ", fgMagenta, "└─ os      : ", fgWhite, styleBright,
-                       osfp.info.name, versionStr, fgWhite, " (", $osfp.confidence, "%)"
+      if not hasInfo:
+        if sr.banner.len > 0:
+          let rawPreview = sr.banner.strip().replace("\r\n", " ").replace("\n", " ")
+          let endIdx = min(100, rawPreview.len)
+          styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite,
+                     "raw banner: ", rawPreview[0 ..< endIdx]
+        else:
+          styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite, "no banner received"
 
-        if not hasInfo:
-          if sr.banner.len > 0:
-            let rawPreview = sr.banner.strip().replace("\r\n", " ").replace("\n", " ")
-            styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite,
-                       "raw banner: ", rawPreview[0 ..< min(100, rawPreview.len)]
-          else:
-            styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite, "no banner received"
+    if args["--verbose"]:
+      for r in rawResults:
+        if not r.isOpen:
+          styledEcho fgRed, "[-] Port ", fgWhite, $r.port, fgRed, " is CLOSED"
 
-      elif args["--verbose"]:
-        styledEcho fgRed, "[-] Port ", fgWhite, $sr.port, fgRed, " is CLOSED"
+  if not jsonMode:
+    styledEcho fgCyan, "[-] Scan complete    : ", fgWhite, styleBright, "VoightNim finished successfully."
 
-    styledEcho fgCyan, "[-] Scan complete    : ", fgWhite, styleBright, $openCount,
-               fgCyan, " open port(s) found on ", fgWhite, styleBright, $portsToScan.len, " scanned."
-
-if isMainModule:
-  let jsonRequested = "--json" in commandLineParams()
-  if not jsonRequested:
-    printBanner()
+when isMainModule:
   main()

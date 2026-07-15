@@ -8,7 +8,7 @@ proc getFtpProbe*(): ServiceProbe =
   result = ServiceProbe(
     probeType: ptFTP,
     name: "FTP",
-    payload: toBytes("USER anonymous\r\n"),
+    payload: toBytes(""), # Vide pour gérer le Server Speaks First (attente du code 220)
     ports: @[21'u16],
     timeoutMs: 1000,
     rarity: 1,
