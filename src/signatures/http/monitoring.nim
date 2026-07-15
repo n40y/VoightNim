@@ -29,7 +29,7 @@ proc getMonitoringSignatures*(): seq[MatchRule] =
   )
 
   result.add MatchRule(
-    pattern: re2"(?i)Prometheus",
+    pattern: re2"(?i)\bPrometheus\b",
     service: sidPrometheus,
     versionGroup: -1,
     confidence: 85,
