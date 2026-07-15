@@ -11,7 +11,6 @@
 
 import ../../fingerprint/types
 
-# À mesure qu'on ajoute des fichiers:
 import ./webservers
 import ./runtimes
 import ./frameworks
