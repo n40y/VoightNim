@@ -40,14 +40,17 @@ proc splitHttpHeaders*(banner: string): tuple[headers: string, body: string] =
 
 # === FIX UTF-8 ===
 proc toSafeString*(s: string): string =
-  ## Remplace les séquences UTF-8 invalides par �
-  result = newStringOfCap(s.len)
-  var i = 0
-  while i < s.len:
-    let runeLen = runeLenAt(s, i)
-    if runeLen > 0:
-      result.add s[i ..< i + runeLen]
-      i += runeLen
+  ## Convertit une chaîne binaire brute en UTF-8 valide.
+  ## En code les octets > 127 sur 2 octets (codepoints 128..255).
+  ## Évite les crashs de la lib regex tout en préservant les signatures binaires.
+  result = ""
+  for c in s:
+    let val = c.uint8
+    
+    if val < 128:
+      result.add(char(val))
     else:
-      result.add "�"
-      i += 1
+      let b1 = char(0xC0 or (val div 64))
+      let b2 = char(0x80 or (val and 0x3F))
+      result.add(b1)
+      result.add(b2)

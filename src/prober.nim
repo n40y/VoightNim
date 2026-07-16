@@ -101,11 +101,10 @@ proc executeProbe*(targetIP: string, port: int, probe: ServiceProbe, timeoutMs: 
     # 1. Gestion du chiffrement TLS (compilation avec -d:ssl requise)
     if probe.transport == trTLS:
       when defined(ssl):
-        let ctx = newContext(verifyMode == CtxNoVerify)
-        ctx.wrapSocket(socket)
-        await soclet.handshake()
+        let ctx = newContext(verifyMode = CVerifyNone)
+        # On passe targetIP pour que le SNI (Server Name Indication) fonctionne
+        ctx.wrapConnectedSocket(socket, handshakeAsClient, targetIP)
       else:
-        # Si SSL n'est pas défini à la compilation, on abandonne.
         socket.close()
         return ""
 
@@ -133,7 +132,9 @@ proc executeProbe*(targetIP: string, port: int, probe: ServiceProbe, timeoutMs: 
     # 4. Boucle de lecture standard pour consommer le reste du buffer
     while banner.len < 32768:
       let recvFut = socket.recv(4096)
-      if not (await withTimeout(recvFut, timeoutMs)):
+      # Si on a déjà des données, on n'attend pas inutilement le timeout complet
+      let currentTimeout = if banner.len > 0: 50 else: timeoutMs
+      if not (await withTimeout(recvFut, currentTimeout)):
         break
       let chunk = recvFut.read()
       if chunk.len == 0:

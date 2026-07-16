@@ -1,4 +1,8 @@
-# src/fingerprint/matcher.nim
+##==============================================================
+##
+### src/fingerprint/matcher.nim
+##
+##==============================================================
 
 import std/options
 import regex
@@ -62,7 +66,8 @@ proc fingerprint*(
     var m: RegexMatch2
 
     try:
-      if target.match(rule.pattern, m):
+      # Remplacement de match par find
+      if target.find(rule.pattern, m):
         return some(buildFingerprint(banner, target, m, rule))
     except AssertionDefect, CatchableError:
       continue
@@ -82,7 +87,8 @@ proc fingerprintAll*(
     var m: RegexMatch2
 
     try:
-      if target.match(rule.pattern, m):
+      # Remplacement de match par find
+      if target.find(rule.pattern, m):
         result.add(buildFingerprint(banner, target, m, rule))
     except AssertionDefect, CatchableError:
       continue
@@ -116,7 +122,8 @@ proc fingerprintOs*(
     var m: RegexMatch2
 
     try:
-      if target.match(rule.pattern, m):
+      # Remplacement de match par find
+      if target.find(rule.pattern, m):
         return some(buildOsFingerprint(banner, target, m, rule))
     except AssertionDefect, CatchableError:
       continue
@@ -136,7 +143,8 @@ proc fingerprintAllOs*(
     var m: RegexMatch2
 
     try:
-      if target.match(rule.pattern, m):
+      # Remplacement de match par find
+      if target.find(rule.pattern, m):
         result.add(buildOsFingerprint(banner, target, m, rule))
     except AssertionDefect, CatchableError:
       continue
