@@ -23,3 +23,5 @@ import ../probes/redis
 import ../probes/smb
 import ../probes/smtp
 import ../probes/ssh
+import ../probes/dns
+import ../probes/msrpc

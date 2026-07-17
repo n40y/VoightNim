@@ -530,6 +530,28 @@ proc getService*(id: ServiceId): ServiceInfo =
       defaultPorts: @[593'u16]
     )
 
+  of sidMSRPC_EPMAP:
+    ServiceInfo(
+      id: sidMSRPC_EPMAP,
+      product: "Microsoft RPC Endpoint Mapper",
+      vendor: "Microsoft",
+      family: "Infrastructure",
+      homepage: "https://learn.microsoft.com",
+      cpe: "",
+      defaultPorts: @[135'u16]
+    )
+
+  of sidMicrosoftDNS:
+    ServiceInfo(
+      id: sidMicrosoftDNS,
+      product: "Microsoft DNS",
+      vendor: "Microsoft",
+      family: "Infrastructure",
+      homepage: "https://learn.microsoft.com",
+      cpe: "cpe:/a:microsoft:dns",
+      defaultPorts: @[53'u16]
+    )
+    
   of sidADWS:
     ServiceInfo(
       id: sidADWS,

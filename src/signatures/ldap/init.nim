@@ -4,7 +4,6 @@
 ## Point d'entrée unique pour les signatures LDAP.
 ## =============================================================================
 
-
 import ../../fingerprint/types
 import ./servers
 

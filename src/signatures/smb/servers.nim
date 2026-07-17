@@ -11,7 +11,7 @@ import ../../fingerprint/types
 proc getSmbServerSignatures*(): seq[MatchRule] =
 
   result = @[]
-
+  
   result.add MatchRule(
     pattern: re2"(?i)Samba[/ ]?(\d[\d.]*)",
     service: sidSamba,

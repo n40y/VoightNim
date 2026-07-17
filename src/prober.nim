@@ -21,41 +21,6 @@ import ./fingerprint/services
 
 const DefaultTimeoutMs* = 800
 
-proc probePortExhaustive*(ip: string, port: Port): async Task[ServiceInfo] =
-  # Par défaut, le service est inconnu
-  result = getService(sidUnknown)
-
-  # Récupérer toutes les sondes chargées dans le registre (RDP, SMB, HTTP...)
-  let allProbes = getAllRegisteredProbes()
-
-  for probe in allProbes:
-    var socket = newAsyncSocket()
-    try:
-      # 1. Connexion fraîche pour chaque protocole
-      await socket.connect(ip, port, timeout = 1000)
-      
-      # 2. Envoi du payload spécifique de la sonde (si défini)
-      if probe.payload.len > 0:
-        await socket.send(probe.payload)
-      
-      # 3. Lecture de la réponse avec un timeout strict
-      let response = await socket.recv(2048, timeout = 1500)
-      
-      # 4. Si on a une réponse, on la passe aux regex de CETTE sonde
-      if response.len > 0:
-        for matchRule in probe.matches:
-          if response.contains(matchRule.pattern): # Ta logique de match regex
-            socket.close()
-            return getService(matchRule.service) # Bingo !
-            
-    except OSError, TimeoutError:
-      discard # le port a drop ou n'a pas répondu à ce payload
-    finally:
-      if not socket.isClosed():
-        socket.close()
-  
-  return getService(sidUnknown)
-
 
 # --- Calibration de la concurrence selon la limite système -----------------
 
@@ -214,7 +179,7 @@ proc grabBanner*(targetIP: string, port: int, probes: seq[ServiceProbe], timeout
   if banner.len > 0: 
     return banner
 
-  # 3. Fallback 2 : STRATÉGIE EXHAUSTIVE (Sûre à 100%)
+  # 3. Fallback 2 : STRATÉGIE EXHAUSTIVE
   # On parcourt absolument toutes les sondes chargées dans le moteur
   for probe in probes:
     # On évite de ré-exécuter celles qui ont déjà échoué à l'étape 1

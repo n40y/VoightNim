@@ -58,12 +58,14 @@ type
     sidLighttpd,
     sidOpenResty,
     sidIIS,
+    
     ## -------------------------
     ## Ajouts récents
     ## -------------------------
-    sidMSRPC,     # Microsoft RPC over HTTP
-    sidADWS,      # Active Directory Web Services 
-    
+    sidMSRPC,         # Microsoft RPC over HTTP
+    sidMSRPC_EPMAP,   # Microsoft RPC Endpoint Mapper (Port 135)
+    sidMicrosoftDNS,  # Micreosoft DNS Service (Port 53)
+    sidADWS,          # Active Directory Web Services 
     
     ## Reverse Proxy
     sidCloudflare,
