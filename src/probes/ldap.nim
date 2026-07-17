@@ -15,6 +15,7 @@
 import ../fingerprint/types
 import ../fingerprint/utils
 import ../signatures/ldap/init as ldapSignatures
+import ../fingerprint/proberegistry
 
 
 proc getLdapProbe*(): ServiceProbe =
@@ -32,3 +33,8 @@ proc getLdapProbe*(): ServiceProbe =
         transport: trTCP,
         matches: ldapSignatures.getLdapSignatures()
     )
+
+# Auto-enregistrement : s'ajoute au registre global dès que ce module est
+# importé (voir src/fingerprint/registry.nim). Rien d'autre n'a besoin de
+# connaître explicitement cette sonde.
+registerProbe(getLdapProbe())

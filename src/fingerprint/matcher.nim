@@ -4,6 +4,8 @@
 ##
 ##==============================================================
 
+# J'ai modifié l'utilisation de regex match par regex find, pour éviter les exceptions de type AssertionDefect ou RangeDefect.
+
 import std/options
 import regex
 

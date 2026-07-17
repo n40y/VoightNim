@@ -3,6 +3,8 @@
 import ../fingerprint/types
 import ../fingerprint/utils
 import ../signatures/smtp/init as smtpSignatures
+import ../fingerprint/proberegistry
+
 
 proc getSmtpProbe*(): ServiceProbe =
   result = ServiceProbe(
@@ -15,3 +17,8 @@ proc getSmtpProbe*(): ServiceProbe =
     transport: trTCP,
     matches: smtpSignatures.getSmtpSignatures()
   )
+
+# Auto-enregistrement : s'ajoute au registre global dès que ce module est
+# importé (voir src/fingerprint/registry.nim). Rien d'autre n'a besoin de
+# connaître explicitement cette sonde.
+registerProbe(getSmtpProbe())

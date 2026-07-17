@@ -3,6 +3,8 @@
 import ../fingerprint/types
 import ../fingerprint/utils
 import ../signatures/redis/init as redisSignatures
+import ../fingerprint/proberegistry
+
 
 proc getRedisProbe*(): ServiceProbe =
   result = ServiceProbe(
@@ -15,3 +17,8 @@ proc getRedisProbe*(): ServiceProbe =
     transport: trTCP,
     matches: redisSignatures.getRedisSignatures()
   )
+
+# Auto-enregistrement : s'ajoute au registre global dès que ce module est
+# importé (voir src/fingerprint/registry.nim). Rien d'autre n'a besoin de
+# connaître explicitement cette sonde.
+registerProbe(getRedisProbe())

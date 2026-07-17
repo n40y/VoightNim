@@ -8,6 +8,7 @@
 import ../fingerprint/types
 import ../fingerprint/utils
 import ../signatures/smb/init as smbSignatures
+import ../fingerprint/proberegistry
 
 
 proc getSmbProbe*(): ServiceProbe =
@@ -26,3 +27,8 @@ proc getSmbProbe*(): ServiceProbe =
         transport: trTCP,
         matches: smbSignatures.getSmbSignatures()
     )
+
+# Auto-enregistrement : s'ajoute au registre global dès que ce module est
+# importé (voir src/fingerprint/registry.nim). Rien d'autre n'a besoin de
+# connaître explicitement cette sonde.
+registerProbe(getSmbProbe())
