@@ -1,10 +1,8 @@
-##==============================================================
+## ==============================================================
+## src/fingerprint/matcher.nim
 ##
-### src/fingerprint/matcher.nim
-##
-##==============================================================
-
-# J'ai modifié l'utilisation de regex match par regex find, pour éviter les exceptions de type AssertionDefect ou RangeDefect.
+## Pattern du moteur de banner grabbing pour tout le programme.
+## ==============================================================
 
 import std/options
 import regex
@@ -14,21 +12,15 @@ import services
 import osCatalog
 import utils
 
-proc targetFor(
-    headersOnly: bool,
-    headers: string,
-    fullBanner: string
-): string =
+
+proc targetFor(headersOnly: bool, headers: string, fullBanner: string): string =
   if headersOnly:
     headers
   else:
     fullBanner
 
-proc extractGroup(
-    target: string,
-    m: RegexMatch2,
-    groupIndex: int
-): string =
+
+proc extractGroup(target: string, m: RegexMatch2, groupIndex: int): string =
   if groupIndex < 0:
     return ""
 
@@ -44,22 +36,14 @@ proc extractGroup(
 # Service fingerprinting
 # -----------------------------------------------------------------------------
 
-proc buildFingerprint(
-    fullBanner: string,
-    target: string,
-    m: RegexMatch2,
-    rule: MatchRule
-): Fingerprint =
+proc buildFingerprint(fullBanner: string, target: string, m: RegexMatch2, rule: MatchRule): Fingerprint =
   result.info = getService(rule.service)
   result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
   result.banner = fullBanner
 
 
-proc fingerprint*(
-    banner: string,
-    probe: ServiceProbe
-): Option[Fingerprint] =
+proc fingerprint*(banner: string, probe: ServiceProbe): Option[Fingerprint] =
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.matches:
@@ -77,10 +61,7 @@ proc fingerprint*(
   return none(Fingerprint)
 
 
-proc fingerprintAll*(
-    banner: string,
-    probe: ServiceProbe
-): seq[Fingerprint] =
+proc fingerprintAll*(banner: string, probe: ServiceProbe): seq[Fingerprint] =
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.matches:
@@ -100,22 +81,14 @@ proc fingerprintAll*(
 # OS fingerprinting
 # -----------------------------------------------------------------------------
 
-proc buildOsFingerprint(
-    fullBanner: string,
-    target: string,
-    m: RegexMatch2,
-    rule: OsMatchRule
-): OsFingerprint =
+proc buildOsFingerprint(fullBanner: string, target: string, m: RegexMatch2, rule: OsMatchRule): OsFingerprint =
   result.info = getOs(rule.os)
   result.version = extractGroup(target, m, rule.versionGroup)
   result.confidence = rule.confidence
   result.banner = fullBanner
 
 
-proc fingerprintOs*(
-    banner: string,
-    probe: ServiceProbe
-): Option[OsFingerprint] =
+proc fingerprintOs*(banner: string, probe: ServiceProbe): Option[OsFingerprint] =
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.osMatches:
@@ -133,10 +106,7 @@ proc fingerprintOs*(
   return none(OsFingerprint)
 
 
-proc fingerprintAllOs*(
-    banner: string,
-    probe: ServiceProbe
-): seq[OsFingerprint] =
+proc fingerprintAllOs*(banner: string, probe: ServiceProbe): seq[OsFingerprint] =
   let (headers, _) = splitHttpHeaders(banner)
 
   for rule in probe.osMatches:

@@ -1,7 +1,7 @@
 ## =============================================================================
 ## src/probes/ldap.nim
 ##
-## Sonde réseau pour le protocole LDAP (Port 389).
+## Sonde réseau pour le protocole LDAP (Ports: 389, 636, 3268, 3269).
 ##
 ## Envoie une requête LDAP SearchRequest anonyme contre le RootDSE
 ## (baseObject="", scope=base, filter=(objectClass=*)) plutôt qu'un simple
@@ -27,7 +27,7 @@ proc getLdapProbe*(): ServiceProbe =
             "\x02\x01\x00\x02\x01\x00\x01\x01\x00\x87\x0b\x6f\x62\x6a\x65" &
             "\x63\x74\x43\x6c\x61\x73\x73\x30\x00"
         ),
-        ports: @[389'u16],
+        ports: @[389'u16, 636'u16, 3268'u16, 3269'u16],
         timeoutMs: 1500,
         rarity: 1,
         transport: trTCP,

@@ -14,11 +14,12 @@ export proberegistry    # ré-expose getAllProbes() : VoightNim.nim n'a rien à 
 # juste ici plutôt que globalement.
 
 {.warning[UnusedImport]: off.}
-import ../probes/http
-import ../probes/ssh
-import ../probes/redis
 import ../probes/ftp
-import ../probes/smtp
+import ../probes/http
 import ../probes/kerberos
 import ../probes/ldap
+import ../probes/rdp
+import ../probes/redis
 import ../probes/smb
+import ../probes/smtp
+import ../probes/ssh

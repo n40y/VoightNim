@@ -45,6 +45,11 @@ type
     sidUnknown,
 
     ## -------------------------
+    ## RDP
+    ## -------------------------
+    sidRDP,
+
+    ## -------------------------
     ## HTTP
     ## -------------------------
     sidNginx,
@@ -53,7 +58,13 @@ type
     sidLighttpd,
     sidOpenResty,
     sidIIS,
-
+    ## -------------------------
+    ## Ajouts récents
+    ## -------------------------
+    sidMSRPC,     # Microsoft RPC over HTTP
+    sidADWS,      # Active Directory Web Services 
+    
+    
     ## Reverse Proxy
     sidCloudflare,
     sidTraefik,
@@ -113,6 +124,7 @@ type
     ## -------------------------
     ## LDAP
     ## -------------------------
+    sidLDAP,
     sidOpenLDAP,
     sidActiveDirectory,
     sidApacheDS,

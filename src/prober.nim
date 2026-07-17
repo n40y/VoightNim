@@ -13,10 +13,49 @@ when defined(ssl):
 when not defined(windows):
     import std/posix
 
-import fingerprint/types
-import fingerprint/utils
+import ./fingerprint/types
+import ./fingerprint/utils
+import ./fingerprint/proberegistry
+import ./fingerprint/services
+
 
 const DefaultTimeoutMs* = 800
+
+proc probePortExhaustive*(ip: string, port: Port): async Task[ServiceInfo] =
+  # Par défaut, le service est inconnu
+  result = getService(sidUnknown)
+
+  # Récupérer toutes les sondes chargées dans le registre (RDP, SMB, HTTP...)
+  let allProbes = getAllRegisteredProbes()
+
+  for probe in allProbes:
+    var socket = newAsyncSocket()
+    try:
+      # 1. Connexion fraîche pour chaque protocole
+      await socket.connect(ip, port, timeout = 1000)
+      
+      # 2. Envoi du payload spécifique de la sonde (si défini)
+      if probe.payload.len > 0:
+        await socket.send(probe.payload)
+      
+      # 3. Lecture de la réponse avec un timeout strict
+      let response = await socket.recv(2048, timeout = 1500)
+      
+      # 4. Si on a une réponse, on la passe aux regex de CETTE sonde
+      if response.len > 0:
+        for matchRule in probe.matches:
+          if response.contains(matchRule.pattern): # Ta logique de match regex
+            socket.close()
+            return getService(matchRule.service) # Bingo !
+            
+    except OSError, TimeoutError:
+      discard # le port a drop ou n'a pas répondu à ce payload
+    finally:
+      if not socket.isClosed():
+        socket.close()
+  
+  return getService(sidUnknown)
+
 
 # --- Calibration de la concurrence selon la limite système -----------------
 
@@ -150,10 +189,10 @@ proc executeProbe*(targetIP: string, port: int, probe: ServiceProbe, timeoutMs: 
 
 
 proc grabBanner*(targetIP: string, port: int, probes: seq[ServiceProbe], timeoutMs: int = DefaultTimeoutMs): Future[string] {.async.} =
-  ## Interroge un port ouvert en cascade :
-  ## 1. Sondes associées spécifiquement au port.
-  ## 2. Sonde passive (Server Speaks First).
-  ## 3. Sondes actives génériques les plus fréquentes (Client Speaks First).
+  ## Interroge un port ouvert en cascade avec une certitude absolue :
+  ## 1. Sondes associées spécifiquement au port (Gain de temps si port standard).
+  ## 2. Sonde passive (Server Speaks First : SSH, FTP...).
+  ## 3. Stratégie Exhaustive : Test de TOUTES les sondes actives du système.
   let p16 = uint16(port)
   var banner = ""
 
@@ -164,7 +203,7 @@ proc grabBanner*(targetIP: string, port: int, probes: seq[ServiceProbe], timeout
       if banner.len > 0: 
         return banner
 
-  # 2. Fallback 1 : Mode passif si le port est inconnu (ex: SSH/FTP sur port exotique)
+  # 2. Fallback 1 : Mode passif si le port est inconnu
   let passiveProbe = ServiceProbe(
     probeType: ptNull, 
     name: "passive", 
@@ -175,10 +214,12 @@ proc grabBanner*(targetIP: string, port: int, probes: seq[ServiceProbe], timeout
   if banner.len > 0: 
     return banner
 
-  # 3. Fallback 2 : Mode actif générique si le port reste muet (ex: HTTP sur port exotique)
-  let genericProbes = @[ptHTTP, ptSMB, ptRedis] #
+  # 3. Fallback 2 : STRATÉGIE EXHAUSTIVE (Sûre à 100%)
+  # On parcourt absolument toutes les sondes chargées dans le moteur
   for probe in probes:
-    if probe.probeType in genericProbes:
+    # On évite de ré-exécuter celles qui ont déjà échoué à l'étape 1
+    # Et on ne teste que les sondes qui ont un payload actif (Client-First)
+    if p16 notin probe.ports and probe.payload.len > 0:
       banner = await executeProbe(targetIP, port, probe, timeoutMs)
       if banner.len > 0: 
         return banner

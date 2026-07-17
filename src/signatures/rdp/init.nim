@@ -1,15 +1,13 @@
 ## =============================================================================
-## signatures/ldap/init.nim
+## signatures/rdp/init.nim
 ##
-## Point d'entrée unique pour les signatures LDAP.
+## Point d'entrée unique pour les signatures RDP.
 ## =============================================================================
-
 
 import ../../fingerprint/types
 import ./servers
 
 
-proc getLdapSignatures*(): seq[MatchRule] = 
+proc getRdpSignatures*(): seq[MatchRule] =
     result = @[]
-
-    result.add getLdapServerSignatures()
+    result.add getRdpClassicSignatures()

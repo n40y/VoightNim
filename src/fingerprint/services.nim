@@ -515,6 +515,62 @@ proc getService*(id: ServiceId): ServiceInfo =
       defaultPorts: @[27017'u16]
     )
 
+  # ---------------------------------------------------------------------------
+  # Microsoft Infrastructure Services
+  # ---------------------------------------------------------------------------
+
+  of sidMSRPC:
+    ServiceInfo(
+      id: sidMSRPC,
+      product: "Microsoft RPC over HTTP",
+      vendor: "Microsoft",
+      family: "Infrastructure",
+      homepage: "https://learn.microsoft.com",
+      cpe: "",
+      defaultPorts: @[593'u16]
+    )
+
+  of sidADWS:
+    ServiceInfo(
+      id: sidADWS,
+      product: "Active Directory Web Services",
+      vendor: "Microsoft",
+      family: "Directory Services",
+      homepage: "https://learn.microsoft.com",
+      cpe: "",
+      defaultPorts: @[9389'u16]
+    )
+
+  # ---------------------------------------------------------------------------
+  # LDAP protocol
+  # ---------------------------------------------------------------------------
+  
+  of sidLDAP:
+    ServiceInfo(
+      id: sidLDAP,
+      product:  "LDAP Active Directory",
+      vendor: "Microsoft",
+      family: "Directory Services",
+      homepage: "",
+      cpe:  "",
+      defaultPorts: @[389'u16, 636'u16, 3268'u16, 3269'u16]
+    )
+  
+  # ---------------------------------------------------------------------------
+  # RDP (Remote Desktop Protocol)
+  # ---------------------------------------------------------------------------
+
+  of sidRDP:
+    ServiceInfo(
+      id: sidRDP,
+      product: "RDP",
+      vendor: "",
+      family: "",
+      homepage: "",
+      cpe: "",
+      defaultPorts: @[3389'u16]
+    )
+
   else:
     ServiceInfo(
       id: id,

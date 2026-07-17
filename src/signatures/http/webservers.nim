@@ -17,6 +17,28 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   result = @[]
 
   # ---------------------------------------------------------------------------
+  # Composants d'infrastructure Microsoft (RPC / Active Directory)
+  # ---------------------------------------------------------------------------
+
+  # Pour le Port 593 (MSRPC over HTTP)
+  result.add MatchRule(
+    pattern: re2(r"(?s).*ncacn_http/([\d.]+).*"), # Le préfixe r"" protège les \d. (?s) active le mode DotAll (le . matche aussi les retours à la ligne).
+    service: sidMSRPC,
+    versionGroup: 1,                             # Groupe 1 correspond bien à ([\d.]+)
+    confidence: 100,
+    headersOnly: false
+  )
+
+  # Pour le Port 9389 (ADWS)
+  result.add MatchRule(
+    pattern: re2(r"(?s).*schemas\.microsoft\.com/ws/2006/05/framing.*"), # Protection du point avec \. valide
+    service: sidADWS,
+    versionGroup: -1,
+    confidence: 100,
+    headersOnly: false
+  )
+
+  # ---------------------------------------------------------------------------
   # Serveurs web classiques
   # ---------------------------------------------------------------------------
 
