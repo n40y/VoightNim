@@ -10,18 +10,20 @@ import std/[strutils]
 
 let doc* = """
 Usage:
-    voightnim <target> port <ports> [-s <speed>] [-v] [--json]
-    voightnim <target> [-s <speed>] [-v] [--json]
+    voightnim <target> port <ports> [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
+    voightnim <target> [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
 
 Options:
-    -s <speed>     Select threads [default: 10]
+    -s <speed>     Max concurrent connections [default: 10]
+    -d <delay>     Base stealth delay between requests in ms [default: 100]
+    -j <jitter>    Max random jitter added/subtracted in ms [default: 30]
     -v, --verbose  Show all traffic
     --json         Output results as JSON (disables colored output)
     -h, --help     Show commands options
 """
 
 proc printBanner*() =
-    echo "\x1B[36mVoightNim"
+    echo "\x1B[36mVoightNim Scanner"
     echo "██╗   ██╗  ██████╗  ██╗  ██████╗  ██╗  ██╗ ████████╗ ███╗   ██╗ ██╗ ███╗   ███╗ "
     echo "██║   ██║ ██╔═══██╗ ██║ ██╔════╝  ██║  ██║ ╚══██╔══╝ ████╗  ██║ ██║ ████╗ ████║ "
     echo "██║   ██║ ██║   ██║ ██║ ██║  ███╗ ███████║    ██║    ██╔██╗ ██║ ██║ ██╔████╔██║ "
@@ -66,6 +68,8 @@ proc parseCLI*(): auto =
         echo "    voightnim <target> [-s <speed>] [-v] [--json]\n"
         echo green & "Options:" & reset
         echo "    -s <speed>     Select threads [default: 10]"
+        echo "    -d <delay>     Base stealth delay between requests in ms [default: 100]"
+        echo "    -j <jitter>    Max random jitter added/subtracted in ms [default: 30]"
         echo "    -v, --verbose  Show all traffic"
         echo "    --json         Output results as JSON (disables colored output)"
         echo "    -h, --help     Show commands options"

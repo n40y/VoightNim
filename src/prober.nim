@@ -15,8 +15,6 @@ when not defined(windows):
 
 import ./fingerprint/types
 import ./fingerprint/utils
-import ./fingerprint/proberegistry
-import ./fingerprint/services
 
 
 const DefaultTimeoutMs* = 800

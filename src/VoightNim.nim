@@ -5,14 +5,16 @@
 ##=================================================
 
 import docopt
-import std/[terminal, strutils, asyncdispatch, json]
+import std/[random, terminal, strutils, asyncdispatch, json]
 
 import cli
 import prober
 import topports
+import core/scheduler
 import fingerprint/types
 import fingerprint/registry
 import fingerprint/engine
+
 
 type ScanResult = tuple[
   port: int,
@@ -25,19 +27,38 @@ type ScanResult = tuple[
 proc main() =
   let args = parseCLI()
   let jsonMode = args["--json"]
-
   let target = $args["<target>"]
-  let speed = parseInt($args["-s"])
+
+  # Valeurs par défaut
+  var speed = 10
+  var baseDelay = 100
+  var jitter = 30
+
+  try:
+    if args["-s"]: speed = parseInt($args["-s"])
+    if args["-d"]: baseDelay = parseInt($args["-d"])
+    if args["-j"]: jitter = parseInt($args["-j"])
+  
+  except ValueError:
+    if not jsonMode:
+      styledEcho fgRed, styleBright, "[!] CLI Error: Options -s, -d and -j require valid integer values."
+    else:
+      echo """{"error": "Invalid integer value for CLI arguments"}"""
+    quit(1)
 
   if not jsonMode:
     printBanner()
     styledEcho fgCyan, "[-] Target detected  : ", fgWhite, styleBright, target
     styledEcho fgCyan, "[-] Concurrent conns : ", fgWhite, styleBright, $speed
+    styledEcho fgCyan, "[-] Base delay       : ", fgWhite, styleBright, $baseDelay, " ms"
+    styledEcho fgCyan, "[-] Jitter range     : ", fgWhite, styleBright, "+/- ", $jitter, " ms"
+
 
   var portsToScan: seq[int]
   if args["port"]:
     let portsRaw = $args["<ports>"]
     portsToScan = parsePorts(portsRaw)
+
     if not jsonMode:
       styledEcho fgGreen, "[+] Ports to scan    : ", fgWhite, styleBright, portsRaw
   else:
@@ -45,10 +66,13 @@ proc main() =
     if not jsonMode:
       styledEcho fgYellow, "[!] No port specified; using common ports list"
 
+
   let maxConcurrency = getMaxConcurrency(speed)
 
+
   # 1. Scan initial des ports en parallèle
-  let rawResults = waitFor scanChunk(target, portsToScan, maxConcurrency)
+  let rawResults = waitFor prepareAndScan(target, portsToScan, maxConcurrency, baseDelay, jitter)
+
 
   # 2. Filtrage des ports ouverts
   var openPorts: seq[int] = @[]
@@ -62,14 +86,17 @@ proc main() =
     if not jsonMode:
       styledEcho fgYellow, "[!] Gathering banners concurrently for ", fgWhite, styleBright, $openPorts.len, fgYellow, " ports..."
 
+
     # 3. Lancement simultané du banner grabbing sur tous les ports ouverts
     var bannerFutures: seq[Future[string]] = @[]
     let allProbes = getAllProbes()
     for port in openPorts:
       bannerFutures.add(grabBanner(target, port, allProbes, DefaultTimeoutMs))
 
+
     # 4. Attente asynchrone globale (Résolution du goulot d'étranglement)
     let banners = waitFor all(bannerFutures)
+
 
     # 5. Analyse des signatures avec le moteur de fingerprinting
     for i, port in openPorts:
@@ -94,6 +121,7 @@ proc main() =
         services: matchedServices,
         osResults: matchedOs
       ))
+
 
   # 6. Rendu des résultats (JSON ou Console stylisée)
   if jsonMode:
@@ -161,4 +189,5 @@ proc main() =
     styledEcho fgCyan, "[-] Scan complete    : ", fgWhite, styleBright, "VoightNim finished successfully."
 
 when isMainModule:
+  randomize()
   main()
