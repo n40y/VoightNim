@@ -5,7 +5,6 @@
 ##================================================
 
 import std/strutils
-import std/unicode
 
 
 proc toBytes*(s: string): seq[byte] =

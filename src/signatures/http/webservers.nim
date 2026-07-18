@@ -42,6 +42,16 @@ proc getWebServerSignatures*(): seq[MatchRule] =
   # Serveurs web classiques
   # ---------------------------------------------------------------------------
 
+  # Détection générique d'un en-tête de réponse HTTP
+  # Match n'importe quelle réponse commençant par HTTP/1.x ou HTTP/2
+  result.add MatchRule(
+    pattern: re2"^(?s)HTTP/\d\.\d \d\d\d",
+    service: sidGenericHTTP,
+    versionGroup: -1,
+    confidence: 50,
+    headersOnly: true
+  )
+
   result.add MatchRule(
     pattern: re2"(?i)Server:\s*nginx(?:/([\d.]+))?",
     service: sidNginx,

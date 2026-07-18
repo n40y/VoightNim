@@ -593,6 +593,17 @@ proc getService*(id: ServiceId): ServiceInfo =
       defaultPorts: @[3389'u16]
     )
 
+  of sidGenericHTTP:
+    ServiceInfo(
+      id: sidGenericHTTP,
+      product: "Generic HTTP Server",
+      vendor: "Unknown",
+      family: "Web Server",
+      homepage: "",
+      cpe: "",
+      defaultPorts: @[80'u16, 443'u16, 8080'u16, 8888'u16]
+    )
+
   else:
     ServiceInfo(
       id: id,
