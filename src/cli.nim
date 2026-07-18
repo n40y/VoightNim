@@ -1,7 +1,5 @@
 ##=======================================================
-##
-## src/cli.nim
-## 
+## src/cli.nim 
 ## =======================================================
 
 import docopt
@@ -17,6 +15,8 @@ Options:
     -s <speed>     Max concurrent connections [default: 10]
     -d <delay>     Base stealth delay between requests in ms [default: 100]
     -j <jitter>    Max random jitter added/subtracted in ms [default: 30]
+    --passive       Enable passive listening mode (no packets sent)
+    --timeout <ms>  Timeout for passive mode in milliseconds [default: 0]
     -v, --verbose  Show all traffic
     --json         Output results as JSON (disables colored output)
     -h, --help     Show commands options
@@ -70,6 +70,8 @@ proc parseCLI*(): auto =
         echo "    -s <speed>     Select threads [default: 10]"
         echo "    -d <delay>     Base stealth delay between requests in ms [default: 100]"
         echo "    -j <jitter>    Max random jitter added/subtracted in ms [default: 30]"
+        echo "    --passive       Enable passive listening mode (no packets sent)"
+        echo "    --timeout <ms>  Timeout for passive mode in milliseconds [default: 0]"
         echo "    -v, --verbose  Show all traffic"
         echo "    --json         Output results as JSON (disables colored output)"
         echo "    -h, --help     Show commands options"

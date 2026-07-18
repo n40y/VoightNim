@@ -14,6 +14,7 @@ import core/scheduler
 import fingerprint/types
 import fingerprint/registry
 import fingerprint/engine
+import passive/listener
 
 
 type ScanResult = tuple[
@@ -35,6 +36,15 @@ proc main() =
   var jitter = 30
 
   try:
+    if args["--passive"]:
+      var timeout = 0
+      if args["--timeout"]:
+        try: timeout = parseInt($args["--timeout"])
+        except ValueError: timeout = 0
+      
+      waitFor startPassiveListen(timeout)
+      quit(0)
+
     if args["-s"]: speed = parseInt($args["-s"])
     if args["-d"]: baseDelay = parseInt($args["-d"])
     if args["-j"]: jitter = parseInt($args["-j"])
