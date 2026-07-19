@@ -1,3 +1,4 @@
+## ===========================================================================
 # src/topports.nim
 #
 # Liste curatée de ports fréquemment utilisés (services standards IANA +
@@ -12,7 +13,8 @@
 #   2. Écris un petit script (Python ou Nim) qui parse ce fichier, trie par
 #      la colonne de fréquence, et génère un `seq[int]` Nim à partir des
 #      N ports les plus fréquents.
-# Dis-moi si tu veux que je t'aide à écrire ce script de conversion.
+#
+## ===========================================================================
 
 const commonPorts* = @[
   21, 22, 23, 25, 53, 67, 68, 69, 80, 88,

@@ -1,10 +1,10 @@
-#===============================================================================
-# src/prober.nim
-#
-# Compilation : nim c src/VoightNim.nim
-# Pas besoin de --threads:on car asyncdispatch tourne sur un seul thread
-# avec un event loop.
-#=================================================================================
+## ===============================================================================
+## src/prober.nim
+##
+## Compilation : nim c src/VoightNim.nim
+##
+## Pas besoin de --threads:on car asyncdispatch tourne sur un seul thread avec un event loop.
+## =================================================================================
 
 import std/[asyncdispatch, asyncnet, nativesockets, strutils, monotimes, times]
 when defined(ssl):
@@ -64,28 +64,6 @@ proc scanChunk*(targetIP: string, ports: seq[int], concurrency: int, timeoutMs: 
         let chunkResults = await all(futures)
         result.add(chunkResults)
         i += concurrency
-
-
-# --- Récupération des bannières applicatives (Mutualisée) -------------------
-
-proc readFromSocket(socket: AsyncSocket, timeoutMs: int): Future[string] {.async.} =
-    var banner = ""
-    let start = getMonoTime()
-    while true:
-        let elapsed = (getMonoTime() - start).inMilliseconds
-        if elapsed >= timeoutMs:
-            break
-        
-        let recvFut = socket.recv(1024)
-        if await withTimeout(recvFut, max(1, int(timeoutMs - elapsed))):
-            if recvFut.failed: break
-            let chunk = recvFut.read()
-            if chunk.len == 0: break
-            banner.add(chunk)
-            if banner.len > 32768: break
-        else:
-            break
-    return banner
 
 
 ## Exécution de la Sonde

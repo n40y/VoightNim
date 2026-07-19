@@ -40,7 +40,7 @@ proc listenProtocol(port: int, protoName: string, parserProc: proc(p: string): s
 # Lance l'écoute passive simultanée sur LLMNR, mDNS et NetBIOS
 proc startPassiveListen*(timeoutMs: int = 0) {.async.} =
   styledEcho fgYellow, "[!] Passive Sniffer active (LLMNR, mDNS, NetBIOS). Press Ctrl+C to stop."
-  styledEcho fgWhite, ("A0A0A0"), "[-] Listening on ports: UDP 5355, UDP 5353, UDP 137\n"
+  styledEcho fgCyan, "[-] Listening on ports: UDP 5355, UDP 5353, UDP 137\n"
 
   # Association des fonctions de parsing de parser.nim
   let parseLlmnr = proc(p: string): string = parseDnsFormat(p)

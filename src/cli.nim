@@ -1,4 +1,4 @@
-##=======================================================
+## =======================================================
 ## src/cli.nim 
 ## =======================================================
 
@@ -8,11 +8,13 @@ import std/[strutils]
 
 let doc* = """
 Usage:
-    voightnim <target> port <ports> [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
-    voightnim <target> [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
+    voightnim <target> port <ports> [--syn] [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
+    voightnim <target> [--syn] [-s <speed>] [-d <delay>] [-j <jitter>] [-v] [--json]
+    voightnim --passive [--timeout <ms>]
 
 Options:
-    -s <speed>     Max concurrent connections [default: 10]
+    --syn          Enable high-performance stealth SYN scanning (requires root/admin)
+    -s <speed>     Max concurrent connections / packet rate [default: 10]
     -d <delay>     Base stealth delay between requests in ms [default: 100]
     -j <jitter>    Max random jitter added/subtracted in ms [default: 30]
     --passive       Enable passive listening mode (no packets sent)
@@ -65,8 +67,10 @@ proc parseCLI*(): auto =
         printBanner()
         echo yellow & "Usage:" & reset
         echo "    voightnim <target> port <ports> [-s <speed>] [-v] [--json]"
-        echo "    voightnim <target> [-s <speed>] [-v] [--json]\n"
+        echo "    voightnim <target> [-s <speed>] [-v] [--json]"
+        echo "    voightnim --passive [--timeout <ms>]\n"
         echo green & "Options:" & reset
+        echo "     --syn          Enable high-performance stealth SYN scanning (requires root/admin)"
         echo "    -s <speed>     Select threads [default: 10]"
         echo "    -d <delay>     Base stealth delay between requests in ms [default: 100]"
         echo "    -j <jitter>    Max random jitter added/subtracted in ms [default: 30]"
