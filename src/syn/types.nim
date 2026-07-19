@@ -5,9 +5,6 @@
 ## =======================================================
 
 type
-  # Type utilitaire pour les pointeurs de calcul de checksum
-  ptr16* = ptr uint16
-
   # Entête IPv4 Standard (20 octets)
   IpHeader* {.packed.} = object
     verIhl*: uint8       # Version (4 bits) + Internet Header Length (4 bits)
@@ -40,3 +37,8 @@ type
     reserved*: uint8     # Fixé à 0
     protocol*: uint8     # Protocole (6 pour le TCP)
     tcpLength*: uint16   # Longueur du bloc TCP (20 octets pour un SYN nu)
+
+  # --- AJOUT : Conteneur global du paquet forgé ---
+  SynPacket* {.packed.} = object
+    ip*: IpHeader
+    tcp*: TcpHeader

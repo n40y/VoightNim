@@ -66,8 +66,8 @@ proc parseCLI*(): auto =
         
         printBanner()
         echo yellow & "Usage:" & reset
-        echo "    voightnim <target> port <ports> [-s <speed>] [-v] [--json]"
-        echo "    voightnim <target> [-s <speed>] [-v] [--json]"
+        echo "    voightnim <target> port <ports> [--syn] [-s <speed>] [-v] [--json]"
+        echo "    voightnim <target> [--syn] [-s <speed>] [-v] [--json]"
         echo "    voightnim --passive [--timeout <ms>]\n"
         echo green & "Options:" & reset
         echo "     --syn          Enable high-performance stealth SYN scanning (requires root/admin)"

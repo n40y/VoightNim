@@ -2,17 +2,16 @@
 ## src/syn/checksum.nim
 ## =======================================================
 
-
 proc computeChecksum*(data: ptr uint16, length: int): uint16 =
     var
         sum: uint32 = 0
         nleft = length
         ptrData = data
     
-    # Addition des mots de  16 bits
+    # Addition des mots de 16 bits
     while nleft > 1:
         sum += ptrData[]
-        ptrData = cast[ptr16](cast[uintptr](ptrData) + 2)
+        ptrData = cast[ptr uint16](cast[int](ptrData) + 2)
         nleft -= 2
 
     # Si la longueur est impaire, on ajoute le dernier octet restant

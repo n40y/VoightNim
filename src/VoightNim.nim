@@ -13,6 +13,7 @@ import fingerprint/types
 import fingerprint/registry
 import fingerprint/engine
 import passive/listener
+import syn/prober
 
 
 type ScanResult = tuple[
@@ -77,23 +78,38 @@ proc main() =
 
   let maxConcurrency = getMaxConcurrency(speed)
 
-
-  # 1. Scan initial des ports en parallèle
-  let rawResults = waitFor prepareAndScan(target, portsToScan, maxConcurrency, baseDelay, jitter)
-
-
-  # 2. Filtrage des ports ouverts
+  # Variables de stockage pour les ports découverts
   var openPorts: seq[int] = @[]
-  for r in rawResults:
-    if r.isOpen:
-      openPorts.add(r.port)
+  var rawResults: seq[tuple[port: int, isOpen: bool]] = @[]
 
+  # =========================================================================
+  # 1. Branchement du Moteur de Scan (SYN Stateless vs Connect Stateful)
+  # =========================================================================
+  if args["--syn"]:
+    if not jsonMode:
+      styledEcho fgYellow, styleBright, "[!] Option --syn active. Launching the binary stealth scanner..."
+    
+    # Configuration réseau requise (À dynamiser par la suite via ton sélecteur d'interface)
+    let srcIp = "192.168.1.31" 
+    let interfaceName = "\\Device\\NPF_Loopback" 
+    
+    # Appel de notre orchestrateur synchrone/multithreadé
+    openPorts = runSynScan(srcIp, target, portsToScan, interfaceName, baseDelay, jsonMode)
+  else:
+    # 1b. Scan classique historique (TCP Connect)
+    rawResults = waitFor prepareAndScan(target, portsToScan, maxConcurrency, baseDelay, jitter)
+    for r in rawResults:
+      if r.isOpen:
+        openPorts.add(r.port)
+
+  # =========================================================================
+  # 2. Collecte des bannières et Fingerprinting (Commun aux deux modes)
+  # =========================================================================
   var scanResults: seq[ScanResult] = @[]
 
   if openPorts.len > 0:
     if not jsonMode:
       styledEcho fgYellow, "[!] Gathering banners concurrently for ", fgWhite, styleBright, $openPorts.len, fgYellow, " ports..."
-
 
     # 3. Lancement simultané du banner grabbing sur tous les ports ouverts
     var bannerFutures: seq[Future[string]] = @[]
@@ -101,10 +117,8 @@ proc main() =
     for port in openPorts:
       bannerFutures.add(grabBanner(target, port, allProbes, DefaultTimeoutMs))
 
-
-    # 4. Attente asynchrone globale (Résolution du goulot d'étranglement)
+    # 4. Attente asynchrone globale
     let banners = waitFor all(bannerFutures)
-
 
     # 5. Analyse des signatures avec le moteur de fingerprinting
     for i, port in openPorts:
@@ -130,8 +144,9 @@ proc main() =
         osResults: matchedOs
       ))
 
-
+  # =========================================================================
   # 6. Rendu des résultats (JSON ou Console stylisée)
+  # =========================================================================
   if jsonMode:
     var jsonArr = newJArray()
     for sr in scanResults:
@@ -188,7 +203,8 @@ proc main() =
         else:
           styledEcho "      ", fgYellow, "└─ unknown : ", fgWhite, "no banner received"
 
-    if args["--verbose"]:
+    # Affichage verbeux uniquement si on n'est pas en mode SYN (le mode SYN étant stateless)
+    if args["--verbose"] and not args["--syn"]:
       for r in rawResults:
         if not r.isOpen:
           styledEcho fgRed, "[-] Port ", fgWhite, $r.port, fgRed, " is CLOSED"
