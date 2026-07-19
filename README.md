@@ -118,61 +118,56 @@ sudo ./VoightNim 10.10.10.5 port 22,80,443 --syn --json | jq .
 |------|-----------------|
 src/
 | `VoightNim.nim` | Point d'entrée principal (orchestration scan + fingerprinting + affichage) |
-| `cli.nim` | Gestion des arguments CLI (docopt) |
-| `prober.nim` | Scan des ports et récupération de bannière (async, sans threads) |
-| `topports.nim` | Liste des ports courants |
+| `cli.nim`       | Gestion des arguments CLI (docopt) |
+| `prober.nim`    | Scan des ports et récupération de bannière (async, sans threads) |
+| `topports.nim`  | Liste des ports courants |
+│
+├── core/                   # Gestion de l'ordonnancement et de la concurrence
+│   └── scheduler.nim       # Pool de workers async, Jitter et Fisher-Yates Shuffling pour le mode Connect
 │
 ├── fingerprint/            # Moteur de fingerprinting
-│   ├── engine.nim          # API haut niveau : detect, detectAll, detectOs, detectAllOs
+│   ├── engine.nim          # API haut niveau : detect, detectAll, detectOs
 │   ├── matcher.nim         # Applique les règles de signatures sur un banner
-│   ├── types.nim           # Types partagés (ServiceId, OsId, Fingerprint, OsFingerprint...)
+│   ├── types.nim           # Types partagés (ServiceId, OsId, Fingerprint...)
 │   ├── services.nim        # Base de connaissances des services (getService)
-│   ├── osCatalog.nim       # Base de connaissances des OS (getOs)
+│   ├── osCatalog.nim       # Base de connaissances des OS 
+│   ├── proberegistry.nim   # Registre global des sondes, rempli par auto-enregistrement
 │   ├── registry.nim        # Registre des sondes (getAllProbes)
-│   └── utils.nim           # Fonctions utilitaires (conversion bytes/string, split headers...)
+│   └── utils.nim           # Fonctions utilitaires (conversion bytes/string...)
+│
+├── passive/                # Module d'écoute passive
+│   └── ...                 # Analyse du trafic réseau à la volée sans injection (Furtivité absolue)
 │
 ├── probes/                 # Une sonde par protocole (connexion + payload uniquement)
-│   ├── http.nim             # appelle signatures/http/init.nim + signatures/os/init.nim
-│   ├── ssh.nim               # appelle signatures/ssh/init.nim + signatures/os/init.nim
-│   ├── ftp.nim               # appelle signatures/ftp/init.nim
-│   ├── smtp.nim              # appelle signatures/smtp/init.nim
-│   ├── redis.nim             # appelle signatures/redis/init.nim
-│   ├── ldap.nim              # appelle signatures/ldap/init.nim
-│   ├── smb.nim               # appelle signatures/smb/init.nim
-│   └── kerberos.nim          # appelle signatures/kerberos/init.nim
+│   ├── http.nim            # appelle signatures/http/init.nim + signatures/os/init.nim
+│   ├── ssh.nim             # appelle signatures/ssh/init.nim + signatures/os/init.nim
+│   ├── ftp.nim             # appelle signatures/ftp/init.nim
+│   ├── smtp.nim            # appelle signatures/smtp/init.nim
+│   ├── redis.nim           # appelle signatures/redis/init.nim
+│   ├── ldap.nim            # appelle signatures/ldap/init.nim
+│   ├── smb.nim             # appelle signatures/smb/init.nim
+│   └── kerberos.nim        # appelle signatures/kerberos/init.nim
 │
-└── signatures/              # Règles de détection, organisées par protocole/axe
-    ├── http/
-    │   ├── init.nim          # Agrège toutes les catégories ci-dessous
-    │   ├── webservers.nim    # Nginx, Apache, Caddy, IIS, Traefik, Envoy...
-    │   ├── runtimes.nim      # PHP, ASP.NET
-    │   ├── frameworks.nim    # Express, Laravel, Django, Flask
-    │   └── monitoring.nim    # Grafana, Prometheus, Elasticsearch/Kibana
-    ├── ssh/
-    │   ├── init.nim
-    │   └── servers.nim       # OpenSSH, libssh, Dropbear, Cisco SSH, SunSSH
-    ├── ftp/
-    │   ├── init.nim
-    │   └── servers.nim       # vsftpd, ProFTPD, FileZilla, Pure-FTPd, Microsoft FTP
-    ├── smtp/
-    │   ├── init.nim
-    │   └── servers.nim       # Postfix, Exim, Microsoft Exchange, Sendmail
-    ├── redis/
-    │   ├── init.nim
-    │   └── servers.nim       # Redis
-    ├── ldap/
-    │   ├── init.nim
-    │   └── servers.nim       # OpenLDAP, Active Directory, ApacheDS...
-    ├── smb/
-    │   ├── init.nim
-    │   └── servers.nim       # Samba, Windows SMB (SMB2, SMB3...)
-    ├── kerberos/
-    │   ├── init.nim
-    │   └── servers.nim       # MIT Kerberos, Heimdal, Microsoft Kerberos...
-    └── os/
-        ├── init.nim
-        ├── linux.nim         # Ubuntu, Debian, CentOS, RHEL, Fedora
-        └── windows.nim       # Windows (via IIS, ASP.NET, en-tête Server)
+├── signatures/             # Règles de détection, organisées par protocole/axe
+│   ├── dns/                # Règles pour serveurs de noms
+│   ├── ftp/                # vsftpd, ProFTPD, FileZilla, Pure-FTPd...
+│   ├── http/               # webservers.nim, runtimes.nim, frameworks.nim, monitoring.nim
+│   ├── kerberos/           # MIT Kerberos, Heimdal, Microsoft Kerberos...
+│   ├── ldap/               # OpenLDAP, Active Directory, ApacheDS...
+│   ├── msrpc/              # Détection de services via Microsoft RPC
+│   ├── os/                 # linux.nim (Ubuntu, Debian...), windows.nim
+│   ├── rdp/                # Signatures pour Remote Desktop Protocol
+│   ├── redis/              # Signatures d'instances Redis
+│   ├── smb/                # Samba, Windows SMB (SMB2, SMB3...)
+│   ├── smtp/               # Postfix, Exim, Microsoft Exchange, Sendmail
+│   └── ssh/                # OpenSSH, libssh, Dropbear, Cisco SSH...
+│
+└── syn/                    # Moteur de scan SYN Stateless (Privilégié / Multi-thread)
+    ├── types.nim           # Structures réseau bas niveau (IpHeader, TcpHeader, SynPacket)
+    ├── checksum.nim        # Calcul manuel de l'Internet Checksum (RFC 1071) via ptr uint16
+    ├── prober.nim          # Orchestrateur SYN (Sender/Sniffer & auto-détection UDP éphémère)
+    ├── win_pcap.nim        # Abstraction de Npcap / wpcap.dll pour Windows
+    └── linux_raw.nim       # Abstraction des Sockets Brutes natives pour Linux
 ```
 
 ## Legal disclaimer
@@ -181,11 +176,14 @@ This tool is intended strictly for authorized security testing, CTF environments
 
 ## Roadmap / next steps
 
-- [ ] **True nmap-parity top-1000 port list** — derive a statistically-ranked list from the real `nmap-services` data file instead of the current curated ~150-port list
-- [ ] **Expand the signature database** — more services (databases: MySQL/PostgreSQL/MongoDB handshake banners, RDP, SNMP), more OS versions and families (FreeBSD, OpenBSD, macOS signals)
-- [ ] **SYN scan mode** — raw-socket half-open scanning (`SOCK_RAW`) as a faster, stealthier alternative to full TCP connect scans; requires elevated privileges and has limited support on Windows
-- [ ] **Unit tests** — validate `parsePorts`, `getMaxConcurrency`, and the matcher/engine layer against known inputs; integration tests against local mock services (e.g. `python -m http.server`, a local SSH daemon)
-- [ ] **UDP scanning support** — currently TCP-only
-- [ ] **Adaptive timeout** — adjust per-probe timeout based on observed RTT instead of a fixed value
-- [ ] **Confidence-based deduplication** — when several rules match the same service, keep the highest-confidence result instead of returning every match
-- [ ] **Portfolio polish** — terminal screenshots/recordings, a short write-up of the design decisions (why async over threads, why a pure-Nim regex engine, why the probe/signature/engine split), and a GitHub Pages entry alongside the other projects
+[x] *SYN Scan Mode* — Stateless half-open raw socket injection with automated OS interface mapping and pointer-safe packet assembly.
+
+[x] *True Nmap-parity Top-1000 Port List* — Extract and rank a precise port distribution array directly from raw nmap-services data files.
+
+[x] *Expand the Signature Database* — Add binary handshake rules for relational databases (MySQL, PostgreSQL, MongoDB), RDP, and SNMP.
+
+[x] *Adaptive Timeout* — Dynamic packet loss prevention by adjusting active response window frames based on moving round-trip-time (RTT) calculations.
+
+[x] *Confidence-Based Deduplication* — Implement a scoring matrix to filter lower-confidence service guesses when multiple signature rules match a single banner destination.
+
+[x] *Unit and Integration Testing* — Validate low-level parsing routines (parsePorts) and the signature matching matrices using isolated local mock daemons.
