@@ -1,10 +1,45 @@
 ##=================================================
-##
 ## src/fingerprint/utils.nim
-##
+## 
+## Fichier contenant les utilitaires
 ##================================================
 
 import std/strutils
+
+
+proc sanitizeDisplay*(raw: string): string =
+  result = newStringOfCap(raw.len)
+
+  for c in raw:
+    let code = ord(c)
+    if code >= 32 and code <= 126:
+      result.add(c)
+    elif c in {'\r', '\n', '\t'}:
+      result.add(' ')
+    else:
+      result.add('.')
+
+proc toHexPreview*(raw: string, maxBytes: int = 16): string =
+  var bytes: seq[string] = @[]
+  let limit = min(raw.len, maxBytes)
+  
+  for i in 0 .. limit:
+    bytes.add(toHex(ord(raw[i]), 2))
+  
+  result = bytes.join(" ")
+  if raw.len > maxBytes:
+    result.add("...")
+
+proc isPrintable*(s: string): bool =
+  if s.len == 0:
+    return false
+
+  var printableCount = 0
+  for c in s:
+    if ord(c) >= 32 and ord(c) <= 126:
+      inc printableCount
+  
+  return (printableCount / s.len) > 0.6
 
 
 proc toBytes*(s: string): seq[byte] =

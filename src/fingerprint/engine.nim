@@ -1,6 +1,8 @@
-# src/fingerprint/engine.nim
+## =========================================================
+## src/fingerprint/engine.nim
+## =========================================================
 
-import std/options
+import std/[options, tables]
 
 import types
 import matcher
@@ -9,10 +11,7 @@ import matcher
 # Axe "service"
 # -----------------------------------------------------------------------------
 
-proc detect*(
-    banner: string,
-    probe: ServiceProbe
-): Option[Fingerprint] =
+proc detect*(banner: string, probe: ServiceProbe): Option[Fingerprint] =
 
   fingerprint(
     banner,
@@ -20,21 +19,35 @@ proc detect*(
   )
 
 
-proc detectAll*(
-    banner: string,
-    probe: ServiceProbe
-): seq[Fingerprint] =
+proc dedupeByFamily(fps: seq[Fingerprint]): seq[Fingerprint] =
+  ## Ne garde que le match de plus haute confiance par "famille" de service
+  ## (ex: "Generic HTTP Server" et "Microsoft IIS" sont tous deux de la
+  ## famille "Web Server" -> seul IIS, plus spécifique, est conservé).
+  ## Deux familles différentes (ex: "Web Server" et "Runtime") restent
+  ## affichées séparément : c'est le comportement "stacked" voulu.
+  var bestByFamily = initTable[string, Fingerprint]()
 
-  fingerprintAll(
-    banner,
-    probe
+  for fp in fps:
+    let key = fp.info.family
+    if key notin bestByFamily or fp.confidence > bestByFamily[key].confidence:
+      bestByFamily[key] = fp
+
+  result = @[]
+  for fp in bestByFamily.values:
+    result.add(fp)
+
+
+proc detectAll*(banner: string, probe: ServiceProbe): seq[Fingerprint] =
+
+  dedupeByFamily(
+    fingerprintAll(
+      banner,
+      probe
+    )
   )
 
 
-proc detectBest*(
-    banner: string,
-    probes: seq[ServiceProbe]
-): Option[Fingerprint] =
+proc detectBest*(banner: string, probes: seq[ServiceProbe]): Option[Fingerprint] =
 
   var best: Option[Fingerprint]
 
@@ -61,10 +74,7 @@ proc detectBest*(
 # Axe "OS"
 # -----------------------------------------------------------------------------
 
-proc detectOs*(
-    banner: string,
-    probe: ServiceProbe
-): Option[OsFingerprint] =
+proc detectOs*(banner: string, probe: ServiceProbe): Option[OsFingerprint] =
 
   fingerprintOs(
     banner,
@@ -72,12 +82,27 @@ proc detectOs*(
   )
 
 
-proc detectAllOs*(
-    banner: string,
-    probe: ServiceProbe
-): seq[OsFingerprint] =
+proc dedupeOs(fps: seq[OsFingerprint]): seq[OsFingerprint] =
+  ## Même principe que dedupeByFamily, mais sur l'identité de l'OS
+  ## (OsId) : plusieurs règles peuvent indiquer "Windows" indépendamment
+  ## (en-tête IIS, en-tête ASP.NET...) ; on ne garde que la plus fiable.
+  var bestById = initTable[OsId, OsFingerprint]()
 
-  fingerprintAllOs(
-    banner,
-    probe
+  for fp in fps:
+    let key = fp.info.id
+    if key notin bestById or fp.confidence > bestById[key].confidence:
+      bestById[key] = fp
+
+  result = @[]
+  for fp in bestById.values:
+    result.add(fp)
+
+
+proc detectAllOs*(banner: string, probe: ServiceProbe): seq[OsFingerprint] =
+
+  dedupeOs(
+    fingerprintAllOs(
+      banner,
+      probe
+    )
   )

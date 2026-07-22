@@ -61,6 +61,18 @@ when defined(windows):
       chan.send((port: port, isOpen: isOpen))
       
     pcap_close(handle)
+elif defined(linux):
+  proc linuxSnifferThread(args: tuple[targetIpBin: uint32, srcPort: uint16]) {.thread.} =
+    let sock: SocketHandle = linuxOpenSniffSocket()
+    if sock.int == -1:
+      return
+
+    # Fenêtre d'écoute volontairement plus longue que le sleep(1200) du thread
+    # principal, pour être certain d'avoir fini de collecter avant le join.
+    linuxSniffResponses(sock, args.targetIpBin, args.srcPort, 1500) do (port: uint16, isOpen: bool):
+      chan.send((port: port, isOpen: isOpen))
+
+    linuxCloseSniffSocket(sock)
 
 proc sendSynPacket*(srcIp: string, destIp: string, srcPort: uint16, destPort: uint16, interfaceName: string = "") =
   var packet: SynPacket
@@ -109,7 +121,8 @@ proc sendSynPacket*(srcIp: string, destIp: string, srcPort: uint16, destPort: ui
 proc runSynScan*(srcIp: string, targetIp: string, ports: seq[int], interfaceName: string, delayMs: int, jsonMode: bool): seq[int] =
   result = @[]
   let targetBin = ipToUint32(targetIp)
-  
+  let sourcePort = 44444'u16
+
   # 1. Détermination intelligente de l'IP source locale
   let computedSrcIp = if srcIp == "" or srcIp == "0.0.0.0": getLocalIpForTarget(targetIp) else: srcIp
   let srcBin = ipToUint32(computedSrcIp)
@@ -139,10 +152,13 @@ proc runSynScan*(srcIp: string, targetIp: string, ports: seq[int], interfaceName
     var snifferThread: Thread[tuple[interfaceName: string, targetIpBin: uint32]]
     createThread(snifferThread, windowsSnifferThread, (computedInterface, targetBin))
     if not jsonMode: echo "[+] Npcap sniffer started on secondary thread."
-  
+  elif defined(linux):
+    var snifferThread: Thread[tuple[targetIpBin: uint32, srcPort: uint16]]
+    createThread(snifferThread, linuxSnifferThread, (targetBin, sourcePort))
+    if not jsonMode: echo "[+] Raw socket sniffer started on secondary thread."
+
   if not jsonMode: echo "[+] Injecting shuffled SYN packets..."
   
-  let sourcePort = 44444'u16
   for port in shuffledPorts:
     sendSynPacket(computedSrcIp, targetIp, sourcePort, cast[uint16](port), computedInterface)
     if delayMs > 0:
@@ -150,7 +166,12 @@ proc runSynScan*(srcIp: string, targetIp: string, ports: seq[int], interfaceName
       
   if not jsonMode: echo "[+] Injection complete. Waiting for responses..."
   sleep(1200)
-  
+
+  when defined(linux):
+    # Le thread a sa propre fenêtre (1500ms) et se termine de lui-même ;
+    # on l'attend pour être sûr qu'il a fini d'écrire dans chan avant de le vider.
+    joinThread(snifferThread)
+
   while chan.peek() > 0:
     let (port, isOpen) = chan.recv()
     if isOpen:

@@ -136,17 +136,21 @@ src/
 │   └── utils.nim           # Fonctions utilitaires (conversion bytes/string...)
 │
 ├── passive/                # Module d'écoute passive
-│   └── ...                 # Analyse du trafic réseau à la volée sans injection (Furtivité absolue)
+│   └── listener.nim        # Lance l'écoute de manière asynchrone (Furtivité absolue)
+│   └── parser.nim          # Extrait un nom d'hôte au format DNS, non-compressé (NetBIOS), requête NetBIOS
 │
 ├── probes/                 # Une sonde par protocole (connexion + payload uniquement)
-│   ├── http.nim            # appelle signatures/http/init.nim + signatures/os/init.nim
-│   ├── ssh.nim             # appelle signatures/ssh/init.nim + signatures/os/init.nim
+│   ├── dns.nim             # appelle signatures/dns/init.nim
 │   ├── ftp.nim             # appelle signatures/ftp/init.nim
-│   ├── smtp.nim            # appelle signatures/smtp/init.nim
+│   ├── http.nim            # appelle signatures/http/init.nim + signatures/os/init.nim
+│   ├── kerberos.nim        # appelle signatures/kerberos/init.nim
 │   ├── redis.nim           # appelle signatures/redis/init.nim
 │   ├── ldap.nim            # appelle signatures/ldap/init.nim
+│   ├── msrpc.nim           # appelle signatures/msrpc/init.nim
+│   ├── rdp.nim             # appelle signatures/rdp/init.nim
 │   ├── smb.nim             # appelle signatures/smb/init.nim
-│   └── kerberos.nim        # appelle signatures/kerberos/init.nim
+│   ├── smtp.nim            # appelle signatures/smtp/init.nim
+│   └── ssh.nim             # appelle signatures/ssh/init.nim + signatures/os/init.nim
 │
 ├── signatures/             # Règles de détection, organisées par protocole/axe
 │   ├── dns/                # Règles pour serveurs de noms
